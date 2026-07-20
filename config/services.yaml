@@ -1,0 +1,183 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    Vtinnovations\Guardian\:
+        resource: '../src/'
+        exclude:
+            - '../src/ContaoManager/'
+            - '../src/DependencyInjection/'
+            - '../src/Guardian.php'
+
+    Vtinnovations\Guardian\Controller\:
+        resource: '../src/Controller/'
+        public: true
+        tags: ['controller.service_arguments']
+
+    Vtinnovations\Guardian\Service\StatusManager:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    Vtinnovations\Guardian\Service\RuntimeConfig:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    Vtinnovations\Guardian\Service\PlatformChecker:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+
+    Vtinnovations\Guardian\Service\MajorVersionInspector:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+
+    # SystemLogger writes to Contao's tl_log table.
+    # The 'contao' monolog channel is what ends up there via ContaoTableHandler.
+    Vtinnovations\Guardian\Service\SystemLogger:
+        arguments:
+            $contaoLogger: '@?monolog.logger.contao'
+        tags:
+            - { name: monolog.logger, channel: contao }
+
+    Vtinnovations\Guardian\Service\PackageInspector:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    Vtinnovations\Guardian\Service\UpdateNotifier:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    Vtinnovations\Guardian\Backup\BackupManager:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    # v-t.one license server integration (Pro tier gate).
+    Vtinnovations\Guardian\Security\LicenseManager:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $verifier:   '@Vtinnovations\Guardian\Security\LicenseVerifier'
+
+    Vtinnovations\Guardian\Restore\RestoreManager:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $backupManager: '@Vtinnovations\Guardian\Backup\BackupManager'
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+
+    Vtinnovations\Guardian\Checker\PreUpdateChecker:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    # Schedule services
+    Vtinnovations\Guardian\Schedule\ScheduleConfig:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    Vtinnovations\Guardian\Schedule\ScheduleState:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    Vtinnovations\Guardian\Schedule\BackupLock:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    Vtinnovations\Guardian\Notifier\BackupNotifier:
+        arguments:
+            $config: '@Vtinnovations\Guardian\Schedule\ScheduleConfig'
+            $projectDir: '%kernel.project_dir%'
+            $mailer: '@?mailer.mailer'
+
+    Vtinnovations\Guardian\Notifier\RecoveryEmailNotifier:
+        arguments:
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+            $panelAuth: '@Vtinnovations\Guardian\External\PanelAuth'
+            $projectDir: '%kernel.project_dir%'
+            $mailer: '@?mailer.mailer'
+            $requestStack: '@?request_stack'
+
+    # Token storage for the standalone recovery panel
+    Vtinnovations\Guardian\External\PanelAuth:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    # ── Job system ──────────────────────────────────────────────────
+    Vtinnovations\Guardian\Job\JobLog:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    Vtinnovations\Guardian\Job\UpdateJobManager:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $log: '@Vtinnovations\Guardian\Job\JobLog'
+            $sysLog: '@Vtinnovations\Guardian\Service\SystemLogger'
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+
+    Vtinnovations\Guardian\Job\Step\CommandRunner:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+
+    Vtinnovations\Guardian\Job\Step\BackupStep: ~
+    Vtinnovations\Guardian\Job\Step\ComposerUpdateStep:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $platformChecker: '@Vtinnovations\Guardian\Service\PlatformChecker'
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+    Vtinnovations\Guardian\Job\Step\CacheClearStep:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+    Vtinnovations\Guardian\Job\Step\MigrateStep:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+    Vtinnovations\Guardian\Job\Step\PreSnapshotStep: ~
+    Vtinnovations\Guardian\Job\Step\MaintenanceOnStep: ~
+    Vtinnovations\Guardian\Job\Step\MaintenanceOffStep: ~
+
+    Vtinnovations\Guardian\Job\Step\ConstraintBumpStep:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+    Vtinnovations\Guardian\Job\Step\RestoreStep: ~
+
+    # Pre-flight check steps for major upgrades.
+    # See BootCheckStep / DryRunCheckStep classes for what each catches.
+    Vtinnovations\Guardian\Job\Step\DryRunCheckStep:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+    Vtinnovations\Guardian\Job\Step\BootCheckStep:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+
+    # Layer-1 (pre-bump) compatibility check, exposed as a service so it
+    # can be invoked from the major-update controller before the user
+    # confirms the upgrade.
+    Vtinnovations\Guardian\Service\CompatibilityAnalyzer:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $runtimeConfig: '@Vtinnovations\Guardian\Service\RuntimeConfig'
+
+    Vtinnovations\Guardian\Job\JobRunner:
+        arguments:
+            $manager: '@Vtinnovations\Guardian\Job\UpdateJobManager'
+            $log: '@Vtinnovations\Guardian\Job\JobLog'
+            $sysLog: '@Vtinnovations\Guardian\Service\SystemLogger'
+            $steps:
+                backup:             '@Vtinnovations\Guardian\Job\Step\BackupStep'
+                composer:           '@Vtinnovations\Guardian\Job\Step\ComposerUpdateStep'
+                cache_clear:        '@Vtinnovations\Guardian\Job\Step\CacheClearStep'
+                migrate:            '@Vtinnovations\Guardian\Job\Step\MigrateStep'
+                pre_snapshot:       '@Vtinnovations\Guardian\Job\Step\PreSnapshotStep'
+                maintenance_on:     '@Vtinnovations\Guardian\Job\Step\MaintenanceOnStep'
+                maintenance_off:    '@Vtinnovations\Guardian\Job\Step\MaintenanceOffStep'
+                bump_constraints:   '@Vtinnovations\Guardian\Job\Step\ConstraintBumpStep'
+                dry_run_check:      '@Vtinnovations\Guardian\Job\Step\DryRunCheckStep'
+                boot_check:         '@Vtinnovations\Guardian\Job\Step\BootCheckStep'
+                restore:            '@Vtinnovations\Guardian\Job\Step\RestoreStep'
+
+    # CLI command
+    Vtinnovations\Guardian\Command\RunJobCommand:
+        tags:
+            - { name: 'console.command' }

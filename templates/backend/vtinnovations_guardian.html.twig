@@ -1,0 +1,3370 @@
+{#
+  @package   [updater]
+  @author    V&T Innovations Team
+  @license   GNU/LGPL
+  @copyright V&T Innovations 2026 - 2028
+#}
+{% extends "@Contao/be_main" %}
+
+{% block main_content %}
+<style>
+/* ───────────────────────────────────────────────────────────────────
+   Guardian — backend styles
+   Uses CSS custom properties so we can adapt to Contao 5's dark mode
+   (html[data-color-scheme="dark"]) and the OS-level preference.
+   ─────────────────────────────────────────────────────────────────── */
+
+:root {
+    /* Surfaces */
+    --updater-bg-card:        #fff;
+    --updater-bg-stat:        #f8f9fa;
+    --updater-bg-fieldset:    #f8f9fa;
+    --updater-bg-row-hover:   #fafafa;
+    --updater-bg-log:         #1e1e1e;
+    --updater-bg-table-head:  #f8f9fa;
+
+    /* Borders */
+    --updater-border:         #ddd;
+    --updater-border-soft:    #eee;
+    --updater-border-fieldset:#e9ecef;
+
+    /* Text */
+    --updater-text:           #333;
+    --updater-text-muted:     #6c757d;
+    --updater-text-soft:      #888;
+    --updater-text-very-soft: #aaa;
+    --updater-text-link:      #0066cc;
+    --updater-text-log:       #a8ff78;
+
+    /* Status badges */
+    --updater-badge-idle-bg:    #e9ecef;
+    --updater-badge-idle-fg:    #495057;
+    --updater-badge-run-bg:     #fff3cd;
+    --updater-badge-run-fg:     #856404;
+    --updater-badge-ok-bg:      #d4edda;
+    --updater-badge-ok-fg:      #155724;
+    --updater-badge-err-bg:     #f8d7da;
+    --updater-badge-err-fg:     #721c24;
+
+    /* Brand */
+    --updater-brand:          #f47c00;
+    --updater-brand-fg:       #fff;
+    --updater-danger:         #dc3545;
+
+    /* Tags */
+    --updater-tag-update-bg:    #fff3cd;
+    --updater-tag-update-fg:    #856404;
+    --updater-tag-uptodate-bg:  #d4edda;
+    --updater-tag-uptodate-fg:  #155724;
+    --updater-tag-abandoned-bg: #f8d7da;
+    --updater-tag-abandoned-fg: #721c24;
+    --updater-tag-blocked-bg:   #ffe5b4;
+    --updater-tag-blocked-fg:   #8a4b00;
+
+    /* Result summary */
+    --updater-result-ok-bg:    #d4edda;
+    --updater-result-ok-fg:    #155724;
+    --updater-result-warn-bg:  #fff3cd;
+    --updater-result-warn-fg:  #856404;
+    --updater-result-err-bg:   #f8d7da;
+    --updater-result-err-fg:   #721c24;
+}
+
+/* Contao 5: html[data-color-scheme="dark"] is set when dark mode is active */
+html[data-color-scheme="dark"] {
+    --updater-bg-card:        #2a2e35;
+    --updater-bg-stat:        #353a42;
+    --updater-bg-fieldset:    #2f343b;
+    --updater-bg-row-hover:   #353a42;
+    --updater-bg-log:         #0f1115;
+    --updater-bg-table-head:  #353a42;
+
+    --updater-border:         #444;
+    --updater-border-soft:    #3a3f47;
+    --updater-border-fieldset:#3a3f47;
+
+    --updater-text:           #e4e6eb;
+    --updater-text-muted:     #b0b3b8;
+    --updater-text-soft:      #909294;
+    --updater-text-very-soft: #6e7174;
+    --updater-text-link:      #4ea3ff;
+    --updater-text-log:       #a8ff78;
+
+    --updater-badge-idle-bg:    #3a3f47;
+    --updater-badge-idle-fg:    #d0d3d8;
+    --updater-badge-run-bg:     #5c4a1a;
+    --updater-badge-run-fg:     #ffe6a8;
+    --updater-badge-ok-bg:      #1e4d2b;
+    --updater-badge-ok-fg:      #b6e5c1;
+    --updater-badge-err-bg:     #5a1e25;
+    --updater-badge-err-fg:     #f5b6bc;
+
+    --updater-tag-update-bg:    #5c4a1a;
+    --updater-tag-update-fg:    #ffe6a8;
+    --updater-tag-uptodate-bg:  #1e4d2b;
+    --updater-tag-uptodate-fg:  #b6e5c1;
+    --updater-tag-abandoned-bg: #5a1e25;
+    --updater-tag-abandoned-fg: #f5b6bc;
+    --updater-tag-blocked-bg:   #5e3d1a;
+    --updater-tag-blocked-fg:   #ffd49b;
+
+    --updater-result-ok-bg:    #1e4d2b;
+    --updater-result-ok-fg:    #b6e5c1;
+    --updater-result-warn-bg:  #5c4a1a;
+    --updater-result-warn-fg:  #ffe6a8;
+    --updater-result-err-bg:   #5a1e25;
+    --updater-result-err-fg:   #f5b6bc;
+}
+
+/* OS-level fallback: only applies if Contao hasn't explicitly forced light mode */
+@media (prefers-color-scheme: dark) {
+    html:not([data-color-scheme="light"]) {
+        --updater-bg-card:        #2a2e35;
+        --updater-bg-stat:        #353a42;
+        --updater-bg-fieldset:    #2f343b;
+        --updater-bg-row-hover:   #353a42;
+        --updater-bg-log:         #0f1115;
+        --updater-bg-table-head:  #353a42;
+
+        --updater-border:         #444;
+        --updater-border-soft:    #3a3f47;
+        --updater-border-fieldset:#3a3f47;
+
+        --updater-text:           #e4e6eb;
+        --updater-text-muted:     #b0b3b8;
+        --updater-text-soft:      #909294;
+        --updater-text-very-soft: #6e7174;
+        --updater-text-link:      #4ea3ff;
+
+        --updater-badge-idle-bg:    #3a3f47;
+        --updater-badge-idle-fg:    #d0d3d8;
+        --updater-badge-run-bg:     #5c4a1a;
+        --updater-badge-run-fg:     #ffe6a8;
+        --updater-badge-ok-bg:      #1e4d2b;
+        --updater-badge-ok-fg:      #b6e5c1;
+        --updater-badge-err-bg:     #5a1e25;
+        --updater-badge-err-fg:     #f5b6bc;
+
+        --updater-tag-update-bg:    #5c4a1a;
+        --updater-tag-update-fg:    #ffe6a8;
+        --updater-tag-uptodate-bg:  #1e4d2b;
+        --updater-tag-uptodate-fg:  #b6e5c1;
+        --updater-tag-abandoned-bg: #5a1e25;
+        --updater-tag-abandoned-fg: #f5b6bc;
+        --updater-tag-blocked-bg:   #5e3d1a;
+        --updater-tag-blocked-fg:   #ffd49b;
+
+        --updater-result-ok-bg:    #1e4d2b;
+        --updater-result-ok-fg:    #b6e5c1;
+        --updater-result-warn-bg:  #5c4a1a;
+        --updater-result-warn-fg:  #ffe6a8;
+        --updater-result-err-bg:   #5a1e25;
+        --updater-result-err-fg:   #f5b6bc;
+    }
+}
+
+/* ── Cards & layout ──────────────────────────────────── */
+.updater-card { background: var(--updater-bg-card); border: 1px solid var(--updater-border); border-radius: 6px; padding: 1.2rem; margin-bottom: 1rem; color: var(--updater-text); }
+.updater-card h3 { margin: 0 0 .8rem 0; font-size: 1rem; color: var(--updater-text); }
+.updater-card p { color: var(--updater-text-muted); }
+.updater-card code { background: var(--updater-bg-stat); padding: 0 .25rem; border-radius: 3px; }
+
+.updater-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.updater-stat { background: var(--updater-bg-stat); padding: 1rem; border-radius: 4px; color: var(--updater-text); }
+.updater-stat .label { font-size: .75rem; color: var(--updater-text-muted); text-transform: uppercase; }
+.updater-stat .value { font-size: 1.4rem; font-weight: bold; margin-top: .3rem; color: var(--updater-text); }
+
+/* ── Status badge ────────────────────────────────────── */
+.updater-status-badge { display: inline-block; padding: .3rem .8rem; border-radius: 4px; font-weight: bold; font-size: .85rem; }
+.updater-status-idle    { background: var(--updater-badge-idle-bg); color: var(--updater-badge-idle-fg); }
+.updater-status-running { background: var(--updater-badge-run-bg);  color: var(--updater-badge-run-fg); }
+.updater-status-success { background: var(--updater-badge-ok-bg);   color: var(--updater-badge-ok-fg); }
+.updater-status-error   { background: var(--updater-badge-err-bg);  color: var(--updater-badge-err-fg); }
+
+/* ── Backup rows ─────────────────────────────────────── */
+.updater-backup-row { display: grid; grid-template-columns: 1fr auto auto auto !important; gap: 1rem; align-items: center; padding: .7rem; border-bottom: 1px solid var(--updater-border-soft); }
+.updater-backup-row:last-child { border-bottom: none; }
+.updater-empty { color: var(--updater-text-soft); padding: 1rem; text-align: center; }
+
+/* ── Buttons ─────────────────────────────────────────── */
+.updater-btn { display: inline-block; padding: .55rem 1.1rem; background: var(--updater-brand); color: var(--updater-brand-fg); border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: .9rem; margin-right: .5rem; }
+.updater-btn:hover { opacity: .9; }
+.updater-btn:disabled { opacity: .5; cursor: not-allowed; }
+.updater-btn-secondary { background: var(--updater-text-muted); }
+.updater-btn-primary { background: var(--updater-brand); }
+.updater-backup-row .updater-btn-delete { background: var(--updater-danger); padding: .35rem .8rem; font-size: .8rem; }
+
+.updater-modal { position: fixed; inset: 0; z-index: 999999; display: flex; align-items: center; justify-content: center; }
+.updater-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.85); backdrop-filter: blur(2px); }
+.updater-modal-dialog { position: relative; background: var(--updater-bg-card); color: var(--updater-text); border: 1px solid var(--updater-border); border-radius: 6px; padding: 1.5rem; max-width: 640px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,.6); z-index: 1; }
+.updater-modal-dialog h2 { margin: 0 0 .8rem 0; color: var(--updater-text); }
+.updater-modal-dialog h3 { font-size: .9rem; color: var(--updater-text-muted); margin: 1.2rem 0 .5rem; text-transform: uppercase; letter-spacing: .04em; }
+.updater-modal-dialog p { color: var(--updater-text); }
+.updater-modal-actions { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--updater-border); }
+
+.updater-radio-row { display: flex; align-items: flex-start; gap: .8rem; padding: .6rem .8rem; border: 1px solid var(--updater-border); border-radius: 4px; margin-bottom: .4rem; cursor: pointer; transition: background .15s; color: var(--updater-text); }
+.updater-radio-row:hover { background: rgba(255,255,255,.03); }
+.updater-radio-row input { margin-top: .2rem; flex-shrink: 0; }
+.updater-radio-row .label-strong { font-weight: 600; font-size: .9rem; color: var(--updater-text); }
+.updater-radio-row .desc { font-size: .8rem; color: var(--updater-text-muted); margin-top: .2rem; }
+
+.updater-pkg-row { display: flex; align-items: center; gap: .6rem; padding: .35rem .4rem; border-radius: 3px; font-size: .85rem; }
+.updater-pkg-row:hover { background: rgba(255,255,255,.04); }
+.updater-pkg-row .pkg-name { flex: 1; font-family: monospace; }
+.updater-pkg-row .pkg-version { color: var(--updater-text-muted); }
+.updater-pkg-row .pkg-arrow { color: var(--updater-success-fg); }
+.updater-backup-row .updater-btn-delete:hover { opacity: .85; }
+
+/* ── Result summaries ────────────────────────────────── */
+.updater-result-summary { padding: 1rem; border-radius: 4px; margin-bottom: 1rem; font-weight: 600; }
+.updater-result-summary.ok      { background: var(--updater-result-ok-bg);   color: var(--updater-result-ok-fg); }
+.updater-result-summary.warning { background: var(--updater-result-warn-bg); color: var(--updater-result-warn-fg); }
+.updater-result-summary.error   { background: var(--updater-result-err-bg);  color: var(--updater-result-err-fg); }
+
+/* ── Check rows (analysis) ───────────────────────────── */
+.updater-check-row { padding: .6rem 0; border-bottom: 1px solid var(--updater-border-soft); display: flex; align-items: flex-start; gap: .7rem; color: var(--updater-text); }
+.updater-check-row:last-child { border-bottom: none; }
+.updater-check-icon { font-size: 1.2rem; line-height: 1.2; }
+.updater-check-body { flex: 1; }
+.updater-check-label { font-weight: 600; }
+.updater-check-message { color: var(--updater-text-muted); font-size: .9rem; margin-top: .15rem; }
+
+/* ── Spinner ─────────────────────────────────────────── */
+.updater-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: updaterSpin 1s linear infinite; vertical-align: middle; margin-right: .35rem; }
+@keyframes updaterSpin { to { transform: rotate(360deg); } }
+
+/* ── Backup log block ────────────────────────────────── */
+.updater-backup-log { background: var(--updater-bg-log); color: var(--updater-text-log); padding: .8rem 1rem; border-radius: 4px; font-family: monospace; font-size: .8rem; line-height: 1.5; max-height: 250px; overflow-y: auto; margin-top: .8rem; white-space: pre-wrap; }
+
+/* ── Backup options fieldset ─────────────────────────── */
+.updater-backup-options { background: var(--updater-bg-fieldset); padding: .9rem 1.1rem; border-radius: 4px; margin: .8rem 0 1rem; border: 1px solid var(--updater-border-fieldset); color: var(--updater-text); }
+.updater-backup-options legend { font-weight: 600; padding: 0 .4rem; font-size: .85rem; color: var(--updater-text-muted); }
+.updater-backup-options label { display: flex; align-items: flex-start; padding: .35rem 0; cursor: pointer; gap: .5rem; color: var(--updater-text); }
+.updater-backup-options label .desc { color: var(--updater-text-muted); font-size: .8rem; font-weight: normal; }
+.updater-backup-options label.disabled { opacity: .55; cursor: not-allowed; }
+.updater-backup-warning { background: var(--updater-tag-update-bg); color: var(--updater-tag-update-fg); padding: .6rem .9rem; border-radius: 4px; margin-top: .5rem; font-size: .85rem; display: none; }
+
+/* ── Package controls & table ────────────────────────── */
+.updater-pkg-controls { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.updater-pkg-filter { padding: .4rem .7rem; border: 1px solid var(--updater-border); border-radius: 4px; font-size: .9rem; flex: 1; min-width: 200px; background: var(--updater-bg-card); color: var(--updater-text); }
+.updater-pkg-checkbox { display: inline-flex; align-items: center; gap: .35rem; font-size: .9rem; color: var(--updater-text-muted); cursor: pointer; }
+.updater-pkg-table { width: 100%; border-collapse: collapse; font-size: .9rem; color: var(--updater-text); }
+.updater-pkg-table th { text-align: left; padding: .6rem; background: var(--updater-bg-table-head); border-bottom: 2px solid var(--updater-border); font-weight: 600; color: var(--updater-text); }
+.updater-pkg-table td { padding: .55rem .6rem; border-bottom: 1px solid var(--updater-border-soft); vertical-align: top; }
+.updater-pkg-table tr:hover td { background: var(--updater-bg-row-hover); }
+.updater-pkg-name { font-family: monospace; font-weight: 600; color: var(--updater-text); }
+.updater-pkg-name.contao { color: var(--updater-brand); }
+.updater-pkg-version { font-family: monospace; color: var(--updater-text-muted); font-size: .85rem; }
+.updater-pkg-arrow { color: var(--updater-text-soft); }
+.updater-pkg-newversion { font-family: monospace; font-weight: 600; }
+.updater-pkg-newversion.semver-major { color: var(--updater-tag-abandoned-fg); }
+.updater-pkg-newversion.semver-minor { color: var(--updater-tag-blocked-fg); }
+.updater-pkg-newversion.semver-patch { color: var(--updater-tag-uptodate-fg); }
+
+/* Tags */
+.updater-pkg-tag { display: inline-block; padding: .15rem .45rem; border-radius: 3px; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.updater-pkg-tag-update    { background: var(--updater-tag-update-bg);    color: var(--updater-tag-update-fg); }
+.updater-pkg-tag-uptodate  { background: var(--updater-tag-uptodate-bg);  color: var(--updater-tag-uptodate-fg); }
+.updater-pkg-tag-abandoned { background: var(--updater-tag-abandoned-bg); color: var(--updater-tag-abandoned-fg); }
+.updater-pkg-tag-blocked   { background: var(--updater-tag-blocked-bg);   color: var(--updater-tag-blocked-fg); }
+.updater-pkg-meta { color: var(--updater-text-soft); font-size: .75rem; margin-top: 1rem; }
+
+/* ── Schedule card ───────────────────────────────────── */
+.updater-sched-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+@media (max-width: 800px) { .updater-sched-grid { grid-template-columns: 1fr; } }
+.updater-sched-block { background: var(--updater-bg-fieldset); border: 1px solid var(--updater-border-fieldset); border-radius: 4px; padding: 1rem 1.1rem; }
+.updater-sched-block h4 { margin: 0 0 .5rem 0; font-size: .95rem; color: var(--updater-text); }
+.updater-sched-block .updater-sched-desc { color: var(--updater-text-muted); font-size: .8rem; margin-bottom: .8rem; }
+.updater-sched-row { display: flex; gap: .5rem; align-items: center; margin: .4rem 0; flex-wrap: wrap; }
+.updater-sched-row label { font-size: .85rem; color: var(--updater-text-muted); min-width: 90px; }
+.updater-sched-row select, .updater-sched-row input[type="time"], .updater-sched-row input[type="number"], .updater-sched-row input[type="text"], .updater-sched-row input[type="email"] { padding: .35rem .5rem; border: 1px solid var(--updater-border); border-radius: 3px; font-size: .85rem; background: var(--updater-bg-card); color: var(--updater-text); }
+.updater-sched-row input[type="number"] { width: 70px; }
+.updater-sched-row input[type="text"], .updater-sched-row input[type="email"] { flex: 1; min-width: 200px; }
+.updater-sched-status { font-size: .8rem; padding: .5rem .7rem; border-radius: 3px; margin-top: .6rem; }
+.updater-sched-status.success { background: var(--updater-result-ok-bg); color: var(--updater-result-ok-fg); }
+.updater-sched-status.error { background: var(--updater-result-err-bg); color: var(--updater-result-err-fg); }
+.updater-sched-status.skipped { background: var(--updater-badge-idle-bg); color: var(--updater-badge-idle-fg); }
+.updater-sched-status.warning { background: var(--updater-result-warn-bg); color: var(--updater-result-warn-fg); }
+.updater-sched-actions { display: flex; gap: .5rem; margin-top: .8rem; flex-wrap: wrap; }
+.updater-sched-toggle { display: flex; align-items: center; gap: .5rem; margin-bottom: .8rem; padding-bottom: .8rem; border-bottom: 1px solid var(--updater-border-soft); }
+.updater-sched-toggle input { width: 16px; height: 16px; }
+.updater-sched-toggle label { font-size: .9rem; color: var(--updater-text); cursor: pointer; }
+.updater-sched-components { background: var(--updater-bg-card); padding: .6rem .7rem; border-radius: 3px; margin: .5rem 0; border: 1px solid var(--updater-border-soft); }
+.updater-sched-components label { display: flex; align-items: center; padding: .15rem 0; font-size: .8rem; color: var(--updater-text); cursor: pointer; gap: .35rem; }
+.updater-sched-cron-note { background: var(--updater-result-warn-bg); color: var(--updater-result-warn-fg); padding: .8rem 1rem; border-radius: 4px; margin-top: 1rem; font-size: .85rem; }
+.updater-sched-cron-note code { background: rgba(0,0,0,.1); padding: 0 .25rem; border-radius: 2px; }
+.updater-cron-details { margin-top: .6rem; border: 1px solid var(--updater-border-soft); border-radius: 4px; background: var(--updater-bg-card); }
+.updater-cron-details summary { cursor: pointer; padding: .6rem .8rem; font-size: .85rem; color: var(--updater-text); list-style: none; }
+.updater-cron-details summary::-webkit-details-marker { display: none; }
+.updater-cron-details summary::before { content: '▸'; display: inline-block; width: 1em; transition: transform .2s; color: var(--updater-text-muted); }
+.updater-cron-details[open] summary::before { transform: rotate(90deg); }
+.updater-cron-details summary:hover { background: var(--updater-bg-row-hover); }
+.updater-cron-detail-body { padding: 0 1rem 1rem 1rem; font-size: .82rem; color: var(--updater-text); border-top: 1px solid var(--updater-border-soft); }
+.updater-cron-detail-body p { margin: .6rem 0; }
+.updater-cron-detail-body ul, .updater-cron-detail-body ol { margin: .4rem 0 .4rem 1.4rem; padding: 0; }
+.updater-cron-detail-body li { margin: .25rem 0; }
+.updater-cron-h5 { font-size: .8rem; margin: 1rem 0 .35rem 0; color: var(--updater-text); text-transform: uppercase; letter-spacing: .04em; }
+.updater-cron-cmd { background: var(--updater-bg-log); color: var(--updater-text-log); padding: .5rem .7rem; border-radius: 3px; font-size: .75rem; overflow-x: auto; margin: .35rem 0; white-space: pre; font-family: monospace; }
+.updater-cron-inline { background: var(--updater-bg-stat); padding: .05rem .35rem; border-radius: 2px; font-family: monospace; font-size: .8em; }
+.updater-cron-badge { display: inline-block; padding: .1rem .45rem; font-size: .65rem; font-weight: 600; text-transform: uppercase; border-radius: 3px; background: var(--updater-badge-idle-bg); color: var(--updater-badge-idle-fg); margin-left: .4rem; vertical-align: middle; }
+.updater-cron-badge-active { background: var(--updater-badge-ok-bg); color: var(--updater-badge-ok-fg); }
+
+/* ── Recovery panel section ──────────────────────────── */
+.updater-recovery-info { background: var(--updater-bg-stat); padding: 1rem 1.2rem; border-radius: 4px; margin-bottom: 1rem; border: 1px solid var(--updater-border-fieldset); }
+.updater-recovery-info p { margin: .4rem 0; color: var(--updater-text); font-size: .9rem; }
+.updater-token-display { background: var(--updater-bg-log); color: var(--updater-text-log); padding: .7rem .9rem; border-radius: 3px; font-family: monospace; font-size: .85rem; word-break: break-all; margin: .4rem 0; user-select: all; }
+.updater-recovery-url { background: var(--updater-bg-card); border: 1px solid var(--updater-border); padding: .55rem .8rem; border-radius: 3px; font-family: monospace; font-size: .85rem; color: var(--updater-text-link); display: inline-block; margin: .3rem 0; }
+.updater-recovery-row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin: .5rem 0; }
+.updater-recovery-row label { font-size: .85rem; color: var(--updater-text-muted); min-width: 110px; }
+.updater-recovery-row input[type="text"] { padding: .35rem .5rem; border: 1px solid var(--updater-border); border-radius: 3px; font-size: .85rem; background: var(--updater-bg-card); color: var(--updater-text); flex: 1; min-width: 200px; max-width: 320px; }
+.updater-token-source-badge { display: inline-block; padding: .15rem .55rem; border-radius: 3px; font-size: .7rem; font-weight: 600; text-transform: uppercase; }
+.updater-token-source-env { background: var(--updater-badge-ok-bg); color: var(--updater-badge-ok-fg); }
+.updater-token-source-file { background: var(--updater-badge-run-bg); color: var(--updater-badge-run-fg); }
+
+/* ── Job runner section ──────────────────────────────── */
+.updater-job-card { background: var(--updater-bg-fieldset); border: 1px solid var(--updater-border-fieldset); border-radius: 4px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+.updater-job-status { display: flex; gap: .8rem; align-items: center; margin-bottom: .8rem; flex-wrap: wrap; }
+.updater-job-progress { background: var(--updater-bg-card); border: 1px solid var(--updater-border-soft); border-radius: 4px; padding: .8rem 1rem; margin: .8rem 0; }
+.updater-job-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .5rem; margin-top: .6rem; }
+.updater-job-step { padding: .5rem .7rem; background: var(--updater-bg-stat); border-radius: 3px; font-size: .8rem; text-align: center; border: 1px solid transparent; }
+.updater-job-step.pending { color: var(--updater-text-soft); }
+.updater-job-step.running { background: var(--updater-badge-run-bg); color: var(--updater-badge-run-fg); border-color: var(--updater-badge-run-fg); font-weight: 600; }
+.updater-job-step.done { background: var(--updater-badge-ok-bg); color: var(--updater-badge-ok-fg); }
+.updater-job-step.failed { background: var(--updater-badge-err-bg); color: var(--updater-badge-err-fg); font-weight: 600; }
+.updater-job-log { background: var(--updater-bg-log); color: var(--updater-text-log); padding: .8rem 1rem; border-radius: 4px; font-family: monospace; font-size: .78rem; line-height: 1.55; max-height: 380px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+.updater-job-log .log-warning { color: #ffd47a; }
+.updater-job-log .log-error { color: #f5b6bc; }
+.updater-job-log .log-step { color: #4ea3ff; font-weight: 600; }
+.updater-job-log .log-time { color: #6e7174; }
+.updater-job-archive { font-size: .85rem; color: var(--updater-text-muted); }
+.updater-job-archive-row { padding: .4rem 0; border-bottom: 1px solid var(--updater-border-soft); display: flex; gap: 1rem; align-items: center; }
+.updater-job-archive-row:last-child { border-bottom: none; }
+
+/* Tab navigation */
+.updater-tabs { display: flex; gap: .25rem; border-bottom: 2px solid var(--updater-border); margin: 1rem 0 1.2rem; flex-wrap: wrap; }
+.updater-tab-btn { background: transparent; color: var(--updater-text-muted); border: none; border-bottom: 3px solid transparent; padding: .7rem 1.2rem; cursor: pointer; font-size: .92rem; font-weight: 600; margin-bottom: -2px; transition: all .15s; }
+.updater-tab-btn:hover { color: var(--updater-text); background: rgba(255,255,255,.03); }
+.updater-tab-btn.active { color: var(--updater-brand); border-bottom-color: var(--updater-brand); }
+.updater-tab-content { display: none; }
+.updater-tab-content.active { display: block; }
+
+/* License gating — server sets `.updater-not-pro` on the root container so
+   the correct look shows on the very first paint (no FOUC). JS toggles the
+   class when the license state changes at runtime. Locked tabs stay visible
+   (upsell-friendly) but the panel content is display:none so gated data is
+   never rendered. Clicks on locked tabs open the upgrade dialog instead of
+   switching. */
+/* Pro-only tabs (Update, Recovery): visible-but-locked for Free users. */
+.updater-not-pro .updater-tab-btn[data-tab="update"],
+.updater-not-pro .updater-tab-btn[data-tab="recovery"] {
+    opacity: .6;
+    cursor: not-allowed;
+}
+.updater-not-pro .updater-tab-btn[data-tab="update"]::before,
+.updater-not-pro .updater-tab-btn[data-tab="recovery"]::before {
+    content: "🔒 ";
+    margin-right: 2px;
+}
+.updater-not-pro .updater-tab-content[data-tab-panel="update"],
+.updater-not-pro .updater-tab-content[data-tab-panel="recovery"] { display: none !important; }
+.updater-not-pro #updaterScheduledCard input,
+.updater-not-pro #updaterScheduledCard select,
+.updater-not-pro #updaterScheduledCard button { pointer-events: none; opacity: .55; }
+.updater-not-pro #updaterScheduledLockNotice { display: block !important; }
+
+/* No-license state: Backup tab also locked. Only Dashboard + Settings usable. */
+.updater-no-license .updater-tab-btn[data-tab="backup"] {
+    opacity: .6;
+    cursor: not-allowed;
+}
+.updater-no-license .updater-tab-btn[data-tab="backup"]::before {
+    content: "🔒 ";
+    margin-right: 2px;
+}
+.updater-no-license .updater-tab-content[data-tab-panel="backup"] { display: none !important; }
+
+/* Free/Pro package badge on the dashboard. */
+.updater-plan-badge {
+    display: inline-flex; align-items: center; gap: .55rem;
+    padding: .55rem 1rem; border-radius: 999px;
+    font-weight: 700; font-size: .95rem; letter-spacing: .3px;
+    border: 1px solid transparent;
+}
+.updater-plan-badge.none {
+    background: var(--updater-badge-err-bg); color: var(--updater-badge-err-fg);
+    border-color: var(--updater-badge-err-fg);
+}
+.updater-plan-badge.free {
+    background: var(--updater-badge-idle-bg); color: var(--updater-badge-idle-fg);
+    border-color: var(--updater-border);
+}
+.updater-plan-badge.pro {
+    background: var(--updater-brand); color: var(--updater-brand-fg);
+    box-shadow: 0 2px 6px rgba(244,124,0,.35);
+}
+.updater-plan-card { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.updater-plan-features { list-style: none; padding: 0; margin: .6rem 0 0; }
+.updater-plan-features li { padding: .18rem 0; font-size: .85rem; color: var(--updater-text-muted); }
+.updater-plan-features li.on  { color: var(--updater-text); }
+.updater-plan-features li.off { color: var(--updater-text-muted); text-decoration: line-through; opacity: .75; }
+
+/* Upgrade dialog for locked-tab clicks. */
+.updater-upgrade-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55);
+    display: none; align-items: center; justify-content: center; z-index: 9999;
+}
+.updater-upgrade-modal.open { display: flex; }
+.updater-upgrade-modal .box {
+    background: var(--updater-bg-card); color: var(--updater-text);
+    max-width: 480px; width: 90%;
+    padding: 1.4rem 1.6rem; border-radius: 8px;
+    border: 1px solid var(--updater-border);
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+}
+.updater-upgrade-modal h3 { margin: 0 0 .5rem 0; font-size: 1.2rem; }
+.updater-upgrade-modal p  { color: var(--updater-text-muted); font-size: .9rem; line-height: 1.5; }
+.updater-upgrade-modal .actions { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1rem; }
+.updater-tab-badge { display: inline-block; background: var(--updater-brand); color: var(--updater-brand-fg); border-radius: 9px; padding: 0 .45rem; font-size: .7rem; margin-left: .35rem; vertical-align: middle; }
+</style>
+
+<div class="tl_listing_container{% if not is_pro %} updater-not-pro{% endif %}{% if not is_licensed %} updater-no-license{% endif %}" id="updaterRoot">
+    <h1>{{ headline }}</h1>
+
+    {# ── Tab navigation ──────────────────────────────────────────── #}
+    <div class="updater-tabs" id="updaterTabs">
+        <button class="updater-tab-btn" data-tab="dashboard">📊 Dashboard</button>
+        <button class="updater-tab-btn" data-tab="update">🔄 Update</button>
+        <button class="updater-tab-btn" data-tab="backup">💾 Backup</button>
+        <button class="updater-tab-btn" data-tab="recovery">🛟 Recovery</button>
+        <button class="updater-tab-btn" data-tab="settings">⚙️ Einstellungen</button>
+    </div>
+
+    {# ── TAB: Dashboard ──────────────────────────────────────────── #}
+    <div class="updater-tab-content" data-tab-panel="dashboard">
+
+    {# ── Plan badge (Keine / Free / Pro) ─────────────────────────── #}
+    <div class="updater-card">
+        <div class="updater-plan-card">
+            <div>
+                <div id="updaterPlanBadge" class="updater-plan-badge {% if is_pro %}pro{% elseif is_licensed %}free{% else %}none{% endif %}">
+                    {% if is_pro %}⭐ Pro-Paket aktiv
+                    {% elseif is_licensed %}🆓 Free-Paket aktiv
+                    {% else %}🚫 Keine Lizenz
+                    {% endif %}
+                </div>
+                <p style="margin:.6rem 0 0;font-size:.85rem;color:var(--updater-text-muted);max-width:520px;line-height:1.5;">
+                    <span id="updaterPlanTagline">
+                        {% if is_pro %}
+                            Voller Funktionsumfang freigeschaltet — Updates, Restore/Recovery, geplante Backups und das Standalone-Recovery-Panel.
+                        {% elseif is_licensed %}
+                            Free-Paket: <strong>Manuelles Backup</strong> verfügbar. Für Updates, Restore/Recovery, geplante Backups und Standalone-Recovery-Panel braucht es eine Pro-Lizenz.
+                        {% else %}
+                            Ohne Lizenz sind alle Funktionen gesperrt. Trage einen Lizenzschlüssel unter <strong>Einstellungen → Pro-Lizenz</strong> ein. Free-Lizenzen schalten das Manuelle Backup frei, Pro-Lizenzen den vollen Funktionsumfang.
+                        {% endif %}
+                    </span>
+                </p>
+            </div>
+            <div style="flex:1;min-width:220px;">
+                <ul id="updaterPlanFeatures" class="updater-plan-features">
+                    <li class="{% if is_licensed %}on{% else %}off{% endif %}">{% if is_licensed %}✓{% else %}🔒{% endif %} Manuelles Backup</li>
+                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} Update-Jobs (Composer)</li>
+                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} Restore / Recovery</li>
+                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} Geplante Backups (Mini + Full)</li>
+                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} Standalone-Recovery-Panel</li>
+                </ul>
+                {% if not is_pro %}
+                <div style="margin-top:.6rem;">
+                    <button class="updater-btn" onclick="updaterSwitchTab('settings', true)" style="font-size:.82rem;padding:.4rem .9rem;">
+                        {% if is_licensed %}⭐ Auf Pro upgraden{% else %}🔑 Lizenz eintragen{% endif %}
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Stats grid ──────────────────────────────────────────────── #}
+    <div class="updater-grid">
+        <div class="updater-stat">
+            <div class="label">Aktuelle Contao-Version</div>
+            <div class="value">{{ current_version }}</div>
+        </div>
+        <div class="updater-stat">
+            <div class="label">Installierte Pakete</div>
+            <div class="value">{{ package_count }}</div>
+        </div>
+        <div class="updater-stat">
+            <div class="label">Verfügbare Backups</div>
+            <div class="value">{{ backups|length }}</div>
+        </div>
+    </div>
+
+    {# ── Status card ─────────────────────────────────────────────── #}
+    <div class="updater-card">
+        <h3>Aktueller Status</h3>
+        {% set state = status.state|default('idle') %}
+        {% set badge_class = state == 'idle' ? 'idle'
+            : (state == 'success' ? 'success'
+            : (state == 'error' ? 'error' : 'running')) %}
+
+        {% set state_label = {
+            'idle':    '✓ Idle — keine Operation läuft',
+            'running': '⏳ Läuft — Operation in Bearbeitung',
+            'success': '✓ Letzte Operation erfolgreich',
+            'error':   '⚠️ Letzte Operation fehlgeschlagen',
+        } %}
+
+        <span class="updater-status-badge updater-status-{{ badge_class }}">
+            {{ state_label[state]|default(state) }}
+        </span>
+
+        {% if state == 'idle' and not status.message %}
+            <div style="font-size:.85rem;color:var(--updater-text-muted);margin-top:.5rem;">
+                Aktuell läuft keine Operation. Die nächste Aktion (Update, Backup oder Restore), die du startest, erscheint hier.
+            </div>
+        {% endif %}
+
+        {% if status.message %}
+            <span style="margin-left:1rem;color:var(--updater-text-muted);">{{ status.message }}</span>
+        {% endif %}
+
+        {% if status.updated_at %}
+            <div style="font-size:.85rem;color:var(--updater-text-soft);margin-top:.5rem;">
+                Letzte Aktualisierung: {{ status.updated_at }}
+            </div>
+        {% endif %}
+
+        {% if status.error %}
+            <div style="background:var(--updater-result-err-bg);color:var(--updater-result-err-fg);padding:.8rem;border-radius:4px;margin-top:1rem;font-family:monospace;font-size:.85rem;">
+                {{ status.error }}
+            </div>
+        {% endif %}
+    </div>
+
+    {# ── Pre-Update Analysis ─────────────────────────────────────── #}
+    <div class="updater-card">
+        <h3>Vorabprüfung (Pre-Update-Analyse)</h3>
+        <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
+            Prüft die Voraussetzungen für ein Update — vollständig nur lesend, verändert nichts.
+        </p>
+        <button class="updater-btn" id="updaterAnalyseBtn" onclick="updaterRunAnalysis()">
+            🔍 Analyse starten
+        </button>
+        <div id="updaterAnalysisResult" style="margin-top:1rem;"></div>
+    </div>
+
+    {# ── Package overview ────────────────────────────────────────── #}
+    <div class="updater-card">
+        <h3>Installierte Pakete &amp; verfügbare Updates</h3>
+        <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
+            Zeigt alle installierten Composer-Pakete. Klicke auf „Updates prüfen", um Packagist direkt nach
+            den neuesten stabilen Versionen jedes Pakets abzufragen — unabhängig von den aktuellen composer.json-Constraints.
+            <br><strong>Hinweis:</strong> „Update verfügbar" bedeutet nur, dass auf Packagist eine neuere Version existiert.
+            Ob sie tatsächlich installiert werden kann, hängt von Dependency-Constraints ab und erfordert unter Umständen,
+            mehrere Pakete gemeinsam zu aktualisieren (z. B. bei einem Contao-Major-Upgrade).
+            Die Ergebnisse werden 24 Stunden gecacht.
+        </p>
+
+        <div class="updater-pkg-controls">
+            <button class="updater-btn" id="updaterPkgLoadBtn" onclick="updaterLoadPackages(false)">
+                📦 Pakete laden
+            </button>
+            <button class="updater-btn updater-btn-secondary" id="updaterPkgRefreshBtn" onclick="updaterLoadPackages(true)" style="display:none;">
+                🔄 Updates prüfen
+            </button>
+            <input type="text" class="updater-pkg-filter" id="updaterPkgFilter" placeholder="Nach Name filtern..." oninput="updaterApplyFilter()" style="display:none;">
+            <label class="updater-pkg-checkbox" id="updaterPkgOnlyUpdatesLabel" style="display:none;">
+                <input type="checkbox" id="updaterPkgOnlyUpdates" onchange="updaterApplyFilter()">
+                Nur Pakete mit Updates anzeigen
+            </label>
+        </div>
+
+        <div id="updaterPkgResult"></div>
+    </div>
+
+    </div> {# end tab: dashboard #}
+
+    {# ── TAB: Backup ─────────────────────────────────────────────── #}
+    <div class="updater-tab-content" data-tab-panel="backup">
+
+    {# ── Backup management ───────────────────────────────────────── #}
+    <div class="updater-card">
+        <h3>Backups</h3>
+        <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
+            Ein vollständiges Backup enthält <code>composer.json</code>, <code>composer.lock</code>, die Datenbank (gzip-komprimiert)
+            sowie die Verzeichnisse <code>vendor/</code> und <code>templates/</code>. Backups liegen unter
+            <code>var/updater/backup/&lt;timestamp&gt;</code> und werden nie überschrieben.
+        </p>
+        <fieldset class="updater-backup-options">
+            <legend>Backup-Inhalte</legend>
+            <label>
+                <input type="checkbox" checked disabled>
+                <div>
+                    <strong>composer.json + composer.lock + Datenbank</strong>
+                    <div class="desc">Immer enthalten — klein (wenige MB).</div>
+                </div>
+            </label>
+            <label>
+                <input type="checkbox" id="updaterBkpVendor" checked>
+                <div>
+                    <strong>vendor/</strong>-Verzeichnis
+                    <div class="desc">Composer-Abhängigkeiten. Empfohlen. Typischerweise 100–500 MB.</div>
+                </div>
+            </label>
+            <label>
+                <input type="checkbox" id="updaterBkpTemplates" checked>
+                <div>
+                    <strong>templates/</strong> + <strong>contao/templates/</strong>
+                    <div class="desc">Eigene Twig- und HTML5-Templates. Klein.</div>
+                </div>
+            </label>
+            <label>
+                <input type="checkbox" id="updaterBkpFiles">
+                <div>
+                    <strong>files/</strong>-Verzeichnis
+                    <span style="color:var(--updater-tag-abandoned-fg);font-size:.75rem;">(kann sehr groß sein!)</span>
+                    <div class="desc">Uploads der Nutzer — Bilder, PDFs, Videos. Oft mehrere GB. Ohne dieses Verzeichnis kann ein Rollback zu inkonsistenten DB-Referenzen und fehlenden Mediendateien führen.</div>
+                </div>
+            </label>
+            <label>
+                <input type="checkbox" id="updaterBkpAssets">
+                <div>
+                    <strong>assets/</strong>-Verzeichnis
+                    <div class="desc">Generierte Bilder, Webfonts und JS/CSS-Asset-Cache. Meist wieder aufbaubar.</div>
+                </div>
+            </label>
+        </fieldset>
+
+        <button class="updater-btn" id="updaterBackupBtn" onclick="updaterCreateBackup()">
+            💾 Backup jetzt erstellen
+        </button>
+        <div id="updaterBackupResult" style="margin-top:1rem;"></div>
+
+        <div id="updaterBackupList" style="margin-top:1.2rem;">
+            {% if backups|length > 0 %}
+                {% for backup in backups %}
+                    <div class="updater-backup-row">
+                        <div>
+                            <strong>{{ backup.name }}</strong>
+                            <div style="font-size:.8rem;color:var(--updater-text-soft);">
+                                Contao {{ backup.contao_version }} · {{ backup.total_size }}
+                            </div>
+                        </div>
+                        <span style="color:var(--updater-text-soft);font-size:.85rem;">{{ backup.created_at }}</span>
+                        <span style="color:var(--updater-text-very-soft);font-size:.8rem;">{{ backup.path }}</span>
+                        <button class="updater-btn updater-btn-delete" onclick="updaterDeleteBackup('{{ backup.name }}')">Löschen</button>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="updater-empty">
+                    Noch keine Backups. Nutze „Backup jetzt erstellen" oder warte, bis vor dem nächsten Update automatisch eines angelegt wird.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Scheduled backups ───────────────────────────────────────── #}
+    <div class="updater-card" id="updaterScheduledCard">
+        <h3>Geplante Backups</h3>
+        <div id="updaterScheduledLockNotice" style="display:none;background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);padding:.7rem .9rem;border-radius:4px;font-size:.85rem;line-height:1.5;margin-bottom:.8rem;">
+            🔒 Das System für geplante Backups benötigt eine gültige <strong>Pro-Lizenz</strong>.
+            Trage deinen Code unter <strong>Einstellungen → Pro-Lizenz</strong> ein, um es freizuschalten.
+            Manuelle Backups oben bleiben verfügbar.
+        </div>
+        <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
+            Führt Backups automatisch über Contaos Cron-System aus. Konfiguriere zwei unabhängige Zeitpläne:
+            <strong>Mini</strong>-Backups (nur Datenbank + Composer-Dateien — schnell und klein) und
+            <strong>Full</strong>-Backups (Datenbank + ausgewählte Verzeichnisse — größer und langsamer).
+            Alte Backups werden automatisch gelöscht, sobald das Retention-Limit erreicht ist.
+        </p>
+
+        <div class="updater-sched-grid">
+            <!-- MINI -->
+            <div class="updater-sched-block">
+                <h4>🗄️ Mini-Backup (nur DB)</h4>
+                <div class="updater-sched-desc">Nur die Datenbank und Composer-Dateien. Schnell (wenige Sekunden).</div>
+
+                <div class="updater-sched-toggle">
+                    <input type="checkbox" id="schedMiniEnabled">
+                    <label for="schedMiniEnabled">Geplante Mini-Backups aktivieren</label>
+                </div>
+
+                <div class="updater-sched-row">
+                    <label>Häufigkeit</label>
+                    <select id="schedMiniFrequency">
+                        <optgroup label="🧪 Testen (intervallbasiert)">
+                            <option value="5min">Alle 5 Minuten</option>
+                            <option value="15min">Alle 15 Minuten</option>
+                            <option value="hourly">Stündlich</option>
+                        </optgroup>
+                        <optgroup label="Produktion">
+                            <option value="daily">Täglich</option>
+                            <option value="weekly">Wöchentlich</option>
+                            <option value="monthly">Monatlich</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="updater-sched-row">
+                    <label>Uhrzeit</label>
+                    <input type="time" id="schedMiniTime">
+                </div>
+                <div class="updater-sched-row" id="schedMiniWeekdayRow" style="display:none;">
+                    <label>Wochentag</label>
+                    <select id="schedMiniWeekday">
+                        <option value="0">Sonntag</option>
+                        <option value="1">Montag</option>
+                        <option value="2">Dienstag</option>
+                        <option value="3">Mittwoch</option>
+                        <option value="4">Donnerstag</option>
+                        <option value="5">Freitag</option>
+                        <option value="6">Samstag</option>
+                    </select>
+                </div>
+                <div class="updater-sched-row" id="schedMiniDomRow" style="display:none;">
+                    <label>Tag im Monat</label>
+                    <input type="number" id="schedMiniDom" min="1" max="28">
+                </div>
+                <div class="updater-sched-row">
+                    <label>Behalte letzte</label>
+                    <input type="number" id="schedMiniRetention" min="1" max="999">
+                    <span style="color:var(--updater-text-muted);font-size:.8rem;">Backups</span>
+                </div>
+
+                <div id="schedMiniState" style="margin-top:.8rem;"></div>
+                <div class="updater-sched-actions">
+                    <button class="updater-btn updater-btn-secondary" onclick="updaterRunSchedule('mini')" style="font-size:.8rem;padding:.4rem .8rem;">▶ Mini jetzt ausführen</button>
+                </div>
+            </div>
+
+            <!-- FULL -->
+            <div class="updater-sched-block">
+                <h4>📦 Full-Backup</h4>
+                <div class="updater-sched-desc">Datenbank + ausgewählte Verzeichnisse. Langsamer (Minuten bis zehn Minuten).</div>
+
+                <div class="updater-sched-toggle">
+                    <input type="checkbox" id="schedFullEnabled">
+                    <label for="schedFullEnabled">Geplante Full-Backups aktivieren</label>
+                </div>
+
+                <div class="updater-sched-row">
+                    <label>Häufigkeit</label>
+                    <select id="schedFullFrequency">
+                        <optgroup label="🧪 Testen (intervallbasiert)">
+                            <option value="5min">Alle 5 Minuten</option>
+                            <option value="15min">Alle 15 Minuten</option>
+                            <option value="hourly">Stündlich</option>
+                        </optgroup>
+                        <optgroup label="Produktion">
+                            <option value="daily">Täglich</option>
+                            <option value="weekly">Wöchentlich</option>
+                            <option value="monthly">Monatlich</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="updater-sched-row">
+                    <label>Uhrzeit</label>
+                    <input type="time" id="schedFullTime">
+                </div>
+                <div class="updater-sched-row" id="schedFullWeekdayRow" style="display:none;">
+                    <label>Wochentag</label>
+                    <select id="schedFullWeekday">
+                        <option value="0">Sonntag</option>
+                        <option value="1">Montag</option>
+                        <option value="2">Dienstag</option>
+                        <option value="3">Mittwoch</option>
+                        <option value="4">Donnerstag</option>
+                        <option value="5">Freitag</option>
+                        <option value="6">Samstag</option>
+                    </select>
+                </div>
+                <div class="updater-sched-row" id="schedFullDomRow" style="display:none;">
+                    <label>Tag im Monat</label>
+                    <input type="number" id="schedFullDom" min="1" max="28">
+                </div>
+                <div class="updater-sched-row">
+                    <label>Behalte letzte</label>
+                    <input type="number" id="schedFullRetention" min="1" max="999">
+                    <span style="color:var(--updater-text-muted);font-size:.8rem;">Backups</span>
+                </div>
+
+                <div class="updater-sched-components">
+                    <strong style="font-size:.8rem;color:var(--updater-text);">In Full-Backup einschließen:</strong>
+                    <label><input type="checkbox" id="schedFullCompVendor"> vendor/</label>
+                    <label><input type="checkbox" id="schedFullCompTemplates"> templates/ + contao/templates/</label>
+                    <label><input type="checkbox" id="schedFullCompFiles"> files/
+                        <span style="color:var(--updater-tag-abandoned-fg);font-size:.7rem;">(kann riesig sein — riskant bei Web-Cron!)</span>
+                    </label>
+                    <div id="schedFilesWarning" style="display:none;background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);padding:.5rem .7rem;border-radius:3px;margin:.4rem 0;font-size:.75rem;line-height:1.4;">
+                        ⚠️ <strong>Warnung:</strong> <code>files/</code> in geplanten Backups ohne echten Cron ist riskant.
+                        Beim Web-Cron läuft das Backup während eines Seitenaufrufs (im Hintergrund) — dauert es länger als
+                        ein paar Minuten und der Hoster killt den PHP-Worker, ist das Backup unvollständig. Teste einmal
+                        mit „▶ Full jetzt ausführen", um die Größe abzuschätzen, bevor du es planst.
+                    </div>
+                    <label><input type="checkbox" id="schedFullCompAssets"> assets/</label>
+                </div>
+
+                <div id="schedFullState" style="margin-top:.8rem;"></div>
+                <div class="updater-sched-actions">
+                    <button class="updater-btn updater-btn-secondary" onclick="updaterRunSchedule('full')" style="font-size:.8rem;padding:.4rem .8rem;">▶ Full jetzt ausführen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Storage path & notifications -->
+        <div class="updater-sched-block" style="margin-top:1rem;">
+            <h4>Speicherort &amp; Benachrichtigungen</h4>
+
+            <div class="updater-sched-row">
+                <label>Speicherpfad</label>
+                <input type="text" id="schedStoragePath" placeholder="(Standard: var/updater/backup)">
+            </div>
+            <div style="color:var(--updater-text-muted);font-size:.75rem;margin:.2rem 0 .8rem 95px;">
+                Absoluter Pfad zur Ablage der Backups. Leer lassen für den Standard. Vermeide <code>vendor/</code>, <code>public/</code> und <code>files/</code>.
+            </div>
+
+            <div class="updater-sched-row">
+                <label>Empfänger</label>
+                <input type="email" id="schedEmail" placeholder="admin@example.com">
+            </div>
+            <div class="updater-sched-row">
+                <label>Absender-E-Mail</label>
+                <input type="email" id="schedSenderEmail" placeholder="(optional — fällt auf Contao-Admin-E-Mail zurück)">
+            </div>
+            <div class="updater-sched-row">
+                <label>Absender-Name</label>
+                <input type="text" id="schedSenderName" placeholder="Guardian" maxlength="100">
+            </div>
+            <div style="font-size:.75rem;color:var(--updater-text-muted);margin:.2rem 0 .8rem 95px;">
+                Leer lassen, um Contaos <strong>System → Einstellungen → Administrator-E-Mail-Adresse</strong> zu nutzen.
+                Nur überschreiben, wenn dein Hosting einen bestimmten Absender verlangt (z. B. eine im Plesk/cPanel
+                eingerichtete Mailbox wie <code>noreply@deine-domain.de</code>) und du die Contao-Admin-E-Mail nicht ändern kannst.
+            </div>
+            <div style="margin-left:95px;">
+                <label class="updater-pkg-checkbox" style="margin-right:1rem;">
+                    <input type="checkbox" id="schedNotifySuccess"> Bei erfolgreichem Backup benachrichtigen
+                </label>
+                <label class="updater-pkg-checkbox">
+                    <input type="checkbox" id="schedNotifyFailure"> Bei fehlgeschlagenem Backup benachrichtigen
+                </label>
+            </div>
+            <div style="margin-top:.8rem;margin-left:95px;">
+                <button class="updater-btn updater-btn-secondary" onclick="updaterTestEmail()" style="font-size:.8rem;padding:.4rem .8rem;">
+                    ✉️ Test-E-Mail jetzt senden
+                </button>
+                <span style="font-size:.75rem;color:var(--updater-text-muted);margin-left:.5rem;">
+                    Speichert erst, dann wird eine Test-Mail mit den aktuellen Einstellungen versendet.
+                </span>
+                <div id="updaterTestEmailResult" style="margin-top:.6rem;"></div>
+            </div>
+        </div>
+
+        <div class="updater-sched-actions" style="margin-top:1rem;">
+            <button class="updater-btn" onclick="updaterSaveSchedule()">💾 Zeitplan speichern</button>
+            <span id="schedSaveResult" style="font-size:.85rem;align-self:center;"></span>
+        </div>
+
+        <div class="updater-sched-cron-note">
+            <strong>⚙️ Wie geplante Backups ausgelöst werden</strong>
+            <p style="margin:.5rem 0;font-size:.85rem;">
+                Dieses Bundle klinkt sich in Contaos eingebautes Cron-System ein. Du musst dich nicht zwischen den
+                Methoden entscheiden — sie funktionieren zusammen und du kannst später ohne Änderungen am Bundle wechseln.
+            </p>
+
+            <details class="updater-cron-details">
+                <summary><strong>Option 1 — Web-Cron</strong> (Standard, keine Einrichtung) <span class="updater-cron-badge updater-cron-badge-active">aktuell aktiv</span></summary>
+                <div class="updater-cron-detail-body">
+                    <p>Wenn du nichts tust, führt Contao Cronjobs am Ende jedes Frontend- oder Backend-Seitenaufrufs aus,
+                    nachdem die Antwort an den Nutzer gesendet wurde. Der Besucher wartet nicht.</p>
+                    <p><strong>Trade-offs:</strong></p>
+                    <ul>
+                        <li>✅ Kein Setup nötig.</li>
+                        <li>✅ Der Nutzer wartet nie — Backups laufen in <code>kernel.terminate</code>.</li>
+                        <li>⚠️ <strong>Zeitplan ist ungefähr:</strong> Ein für 03:00 geplantes Backup startet erst beim
+                            ersten Seitenaufruf nach 03:00. Ohne nächtlichen Traffic kann es auch erst um 08:30 laufen.</li>
+                        <li>⚠️ Lang laufende Backups (besonders mit <code>files/</code>) können PHP-FPM-Limits im Shared Hosting reißen.</li>
+                    </ul>
+                    <p style="background:var(--updater-bg-stat);padding:.6rem .8rem;border-radius:3px;font-size:.8rem;">
+                        🧪 <strong>Test-Tipp:</strong> Die Frequenzen „Alle 5 Minuten / 15 Minuten / Stündlich" sind
+                        intervallbasiert — sie feuern, sobald diese Zeit seit dem letzten Lauf vergangen ist, unabhängig
+                        von der Uhrzeit. Beim Web-Cron hängt das trotzdem daran, dass jemand die Seite aufruft und
+                        damit Contaos Cron-Framework auslöst. Ohne Traffic reicht ein Reload einer beliebigen Backend-Seite.
+                    </p>
+                </div>
+            </details>
+
+            <details class="updater-cron-details">
+                <summary><strong>Option 2 — Echter Cron</strong> (für Produktion empfohlen) <span class="updater-cron-badge">zusätzliches Setup</span></summary>
+                <div class="updater-cron-detail-body">
+                    <p>Richte dein Hosting so ein, dass <code>contao:cron</code> zeitgesteuert aufgerufen wird.
+                    Backups laufen dann pünktlich, auch ohne Besucher, und teilen keine Ressourcen mit Web-Requests.</p>
+
+                    <p><strong>Der Befehl:</strong></p>
+                    <pre class="updater-cron-cmd">/usr/bin/php {{ project_dir }}/vendor/bin/contao-console contao:cron</pre>
+                    <p style="font-size:.75rem;color:var(--updater-text-muted);">
+                        Passe den PHP-Pfad an, falls nötig. Viele Hoster erkennen ihn automatisch — oft reicht auch <code>contao-console contao:cron</code>.
+                    </p>
+
+                    <h5 class="updater-cron-h5">🔵 Plesk</h5>
+                    <ol>
+                        <li>Öffne <em>Domains → deine Domain → Geplante Aufgaben</em></li>
+                        <li>Klick auf <strong>Aufgabe hinzufügen</strong></li>
+                        <li>Aufgabentyp: <strong>Befehl ausführen</strong></li>
+                        <li>Befehl:
+                            <pre class="updater-cron-cmd">vendor/bin/contao-console contao:cron</pre>
+                        </li>
+                        <li>Ausführen: <strong>Cron-Stil</strong> →
+                            <code class="updater-cron-inline">*/5 * * * *</code>
+                            (alle 5 Minuten)
+                        </li>
+                        <li>Speichern. Plesk führt das Kommando standardmäßig vom Domain-Root aus.</li>
+                    </ol>
+
+                    <h5 class="updater-cron-h5">🟠 cPanel</h5>
+                    <ol>
+                        <li>Öffne <em>Advanced → Cron Jobs</em></li>
+                        <li>Common Settings: <strong>Alle 5 Minuten</strong> (<code>*/5 * * * *</code>)</li>
+                        <li>Befehl:
+                            <pre class="updater-cron-cmd">cd ~/yoursite.com && /usr/local/bin/php vendor/bin/contao-console contao:cron &gt;/dev/null 2&gt;&amp;1</pre>
+                        </li>
+                        <li>Ersetze <code>~/yoursite.com</code> durch deinen tatsächlichen Document-Root.</li>
+                        <li>Speichern.</li>
+                    </ol>
+
+                    <h5 class="updater-cron-h5">🟢 DirectAdmin</h5>
+                    <ol>
+                        <li>Öffne <em>Account Manager → Cron Jobs</em></li>
+                        <li>Setze die Zeitplan-Felder manuell:
+                            Minute=<code class="updater-cron-inline">*/5</code>,
+                            Stunde=<code class="updater-cron-inline">*</code>, Tag=<code class="updater-cron-inline">*</code>,
+                            Monat=<code class="updater-cron-inline">*</code>, Wochentag=<code class="updater-cron-inline">*</code>
+                        </li>
+                        <li>Befehl:
+                            <pre class="updater-cron-cmd">cd /home/USER/domains/yoursite.com/public_html && php vendor/bin/contao-console contao:cron</pre>
+                        </li>
+                    </ol>
+
+                    <h5 class="updater-cron-h5">⚫ SSH / direktes crontab</h5>
+                    <ol>
+                        <li>Per SSH einloggen</li>
+                        <li><code>crontab -e</code> ausführen</li>
+                        <li>Einfügen:
+                            <pre class="updater-cron-cmd">*/5 * * * * /usr/bin/php /full/path/to/site/vendor/bin/contao-console contao:cron &gt;/dev/null 2&gt;&amp;1</pre>
+                        </li>
+                        <li>Speichern und beenden (<code>:wq</code> in vim, <code>Strg+X Y</code> in nano).</li>
+                    </ol>
+
+                    <p style="font-size:.8rem;margin-top:.8rem;">
+                        <strong>Frequenz-Empfehlung:</strong> Alle 5 Minuten ist völlig ok. Der Scheduler rate-limitet
+                        unser Backup-Job intern auf „stündlich" — häufigere Cron-Läufe verringern nur den Drift.
+                    </p>
+                </div>
+            </details>
+
+            <details class="updater-cron-details">
+                <summary><strong>Beides gleichzeitig?</strong> Ja — sie vertragen sich problemlos.</summary>
+                <div class="updater-cron-detail-body">
+                    <p>Wenn du einen echten Cron einrichtest <em>und</em> Web-Traffic hast, kommt das Bundle mit beidem klar:</p>
+                    <ul>
+                        <li>Contao merkt sich den letzten Ausführungszeitpunkt jedes Cronjobs. Wer zuerst feuert, gewinnt —
+                            der zweite sieht „schon in dieser Stunde gelaufen, überspringe".</li>
+                        <li>Ein zusätzlicher File-Lock (<code>flock()</code> auf <code>var/updater/backup.lock</code>) verhindert
+                            zusätzlich, dass zwei Backups parallel laufen.</li>
+                        <li>Du kannst den echten Cron später wieder entfernen — das Web-Fallback übernimmt automatisch.
+                            Oder umgekehrt: Cron nachträglich einrichten, es funktioniert einfach.</li>
+                    </ul>
+                    <p><strong>Empfehlung:</strong> Richte einen echten Cron ein, wenn dein Hosting das erlaubt. Das
+                    Web-Fallback wird dann zum Sicherheitsnetz — Backups laufen auch, wenn der Cron-Dienst mal ausfällt.</p>
+                </div>
+            </details>
+
+            <p style="font-size:.75rem;color:var(--updater-text-muted);margin-top:.6rem;">
+                Referenz: <a href="https://docs.contao.org/5.x/manual/en/performance/cronjobs/" target="_blank" rel="noopener">Contao Cronjobs-Dokumentation</a>
+            </p>
+        </div>
+    </div>
+
+    </div> {# end tab: backup #}
+
+    {# ── TAB: Update ─────────────────────────────────────────────── #}
+    <div class="updater-tab-content" data-tab-panel="update">
+
+    {# ── Update job runner ───────────────────────────────────────── #}
+    <div class="updater-card">
+        <h3>🔄 Update ausführen</h3>
+        <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
+            Updates laufen als Background-Jobs in einem separaten PHP-Prozess — der Browser muss nicht offen bleiben.
+            Fortschritt und Live-Log aktualisieren sich automatisch. Starte mit <strong>Dry-Run</strong>, um zu sehen,
+            was <em>passieren würde</em>, ohne etwas zu ändern.
+        </p>
+        <p style="color:var(--updater-text-muted);font-size:.8rem;margin:.4rem 0 1rem;">
+            💡 Wichtige Ereignisse aus Updates und geplanten Backups werden zusätzlich in Contaos
+            <strong>Systemlog</strong> geschrieben (System → Systemlog, Aktion <code>VTINNOVATIONS_GUARDIAN</code>).
+            So kannst du auch nachträglich nachvollziehen, was passiert ist, wenn das Live-Log hier weg ist.
+        </p>
+
+        <div id="updaterJobControls">
+            <button class="updater-btn" onclick="updaterStartJob('dry_run')">🧪 Dry-Run (sichere Simulation)</button>
+            <button class="updater-btn updater-btn-primary" onclick="updaterOpenUpdateModal()" style="background:var(--updater-danger);">▶ Echtes Update…</button>
+            <span style="color:var(--updater-text-muted);font-size:.8rem;margin-left:1rem;">
+                Vor jedem Update wird ein Pre-Update-Snapshot erstellt. Schlägt das Update fehl, ist ein Rollback mit einem Klick möglich.
+            </span>
+        </div>
+
+        <!-- Real update modal -->
+        <div id="updaterUpdateModal" class="updater-modal" style="display:none;">
+            <div class="updater-modal-backdrop" onclick="updaterCloseUpdateModal()"></div>
+            <div class="updater-modal-dialog">
+                <h2>▶ Echtes Update starten</h2>
+                <p style="color:var(--updater-text-muted);font-size:.85rem;">
+                    Dies verändert deine Live-Seite. Zuvor wird ein Pre-Update-Snapshot erstellt, damit du zurückrollen kannst.
+                </p>
+
+                <h3 style="margin-top:1rem;">Update-Modus</h3>
+                <label class="updater-radio-row">
+                    <input type="radio" name="updateMode" value="full" checked>
+                    <div>
+                        <div class="label-strong">Full — alles innerhalb der composer.json-Constraints aktualisieren</div>
+                        <div class="desc">Aktualisiert alle Pakete auf die höchsten von composer.json erlaubten Versionen. Häufigste Wahl.</div>
+                    </div>
+                </label>
+                <label class="updater-radio-row">
+                    <input type="radio" name="updateMode" value="patch">
+                    <div>
+                        <div class="label-strong">Konservativ — stabile Releases bevorzugen</div>
+                        <div class="desc">Wie Full, aber ohne Pre-Release-Versionen. Für strikt Patch-only in composer.json auf <code>~X.Y.Z</code> pinnen.</div>
+                    </div>
+                </label>
+                <label class="updater-radio-row">
+                    <input type="radio" name="updateMode" value="selective">
+                    <div>
+                        <div class="label-strong">Selektiv — einzelne Pakete auswählen</div>
+                        <div class="desc">Wähle exakt aus, welche Pakete aktualisiert werden. Abhängigkeiten werden automatisch mitgezogen.</div>
+                    </div>
+                </label>
+
+                <div id="updaterSelectivePackages" style="display:none;margin-top:1rem;max-height:300px;overflow-y:auto;border:1px solid var(--updater-border);border-radius:4px;padding:.5rem;background:rgba(255,255,255,0.02);">
+                    <div style="text-align:center;color:var(--updater-text-muted);padding:1rem;">Pakete werden geladen…</div>
+                </div>
+
+                <h3 style="margin-top:1rem;">Pre-Update-Snapshot</h3>
+                <label class="updater-radio-row">
+                    <input type="checkbox" id="updaterSnapshotVendor" checked>
+                    <div>
+                        <div class="label-strong"><code>vendor/</code> in den Snapshot aufnehmen (empfohlen)</div>
+                        <div class="desc">Erlaubt einen vollständigen Rollback. Ohne dies umfasst der Rollback nur Composer-Dateien + DB, du müsstest <code>composer install</code> manuell nachziehen.</div>
+                    </div>
+                </label>
+
+                <h3 style="margin-top:1rem;">Recovery-E-Mail</h3>
+                <label class="updater-radio-row" style="border-color:#c89a3a;">
+                    <input type="checkbox" id="updaterSendRecoveryEmail" checked>
+                    <div>
+                        <div class="label-strong">📧 Recovery-URLs + Access-Token <strong>vor</strong> dem Update per E-Mail senden</div>
+                        <div class="desc">
+                            Falls etwas schiefgeht, ist diese Mail deine Rettungsleine. Empfänger konfigurierst du unter
+                            <a href="#tab=settings" onclick="updaterSwitchTab('settings', true)" style="color:var(--updater-text-link);">Einstellungen → Recovery-E-Mail</a>.
+                            <strong>Lösche die E-Mail nach erfolgreichem Update</strong> — sie enthält deinen vollständigen Access-Token.
+                        </div>
+                    </div>
+                </label>
+
+                <div class="updater-modal-actions">
+                    <button class="updater-btn updater-btn-secondary" onclick="updaterCloseUpdateModal()">Abbrechen</button>
+                    <button class="updater-btn" style="background:var(--updater-danger);" onclick="updaterConfirmStartUpdate()">▶ Update jetzt starten</button>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="updaterJobActive" style="display:none;margin-top:1rem;"></div>
+
+        <details style="margin-top:1rem;">
+            <summary style="cursor:pointer;font-size:.85rem;color:var(--updater-text-muted);">
+                ▸ Letzte Job-Historie
+            </summary>
+            <div id="updaterJobArchive" class="updater-job-archive" style="margin-top:.8rem;">
+                <em>Lädt...</em>
+            </div>
+        </details>
+    </div>
+
+    </div> {# end tab: update #}
+
+    {# ── TAB: Settings ───────────────────────────────────────────── #}
+    <div class="updater-tab-content" data-tab-panel="settings">
+
+    {# ── Pro License (v-t.one) ───────────────────────────────────── #}
+    <div class="updater-card">
+        <h3>🔑 Pro-Lizenz</h3>
+        <p style="color:var(--updater-text-muted);font-size:.88rem;margin:.3rem 0 .9rem;line-height:1.5;">
+            Trage deinen Pro-Lizenzschlüssel ein, um den vollen Funktionsumfang freizuschalten:
+            <strong>Update-Jobs</strong>, <strong>Restore / Recovery</strong>,
+            das System für <strong>geplante Backups</strong> und das
+            <strong>Standalone-Recovery-Panel</strong>. Ohne gültige Lizenz ist nur
+            das Modul <strong>Manuelles Backup</strong> verfügbar.
+        </p>
+        <p style="font-size:.85rem;margin:.3rem 0 .9rem;">
+            🔗 Lizenz beziehen unter
+            <a href="https://v-t.one" target="_blank" rel="noopener" style="color:var(--updater-text-link);font-weight:600;">v-t.one</a>
+            (Free &amp; Pro).
+        </p>
+
+        <div id="proLicenseState" style="margin-bottom:.8rem;font-size:.85rem;color:var(--updater-text-muted);">
+            Status wird geladen…
+        </div>
+
+        <div class="updater-recovery-row" style="margin-bottom:.6rem;">
+            <label style="min-width:120px;">Lizenzschlüssel</label>
+            <input type="text" id="proLicenseInput" placeholder="Lizenzschlüssel eingeben" style="flex:1;font-family:monospace;" maxlength="190">
+        </div>
+
+        <button class="updater-btn" onclick="updaterActivateLicense()" style="font-size:.85rem;padding:.45rem .9rem;">Lizenz prüfen &amp; aktivieren</button>
+        <button class="updater-btn updater-btn-secondary" onclick="updaterClearLicense()" style="font-size:.85rem;padding:.45rem .9rem;">Lizenz entfernen</button>
+        <span id="proLicenseStatus" style="margin-left:.7rem;font-size:.85rem;"></span>
+    </div>
+
+    {# ── Recovery e-mail settings ────────────────────────────────── #}
+    <div class="updater-card">
+        <h3>📧 Recovery-E-Mail-Benachrichtigungen</h3>
+        <p style="color:var(--updater-text-muted);font-size:.88rem;margin:.3rem 0 .9rem;line-height:1.5;">
+            Beim Start eines echten Updates kann das Panel Recovery-URLs und Access-Token
+            <strong>vor</strong> Beginn des Updates an eine konfigurierte Adresse mailen. Das ist essenziell —
+            zerlegt dir das Update die Seite, kannst du dich über die URLs in der Mail retten, auch ohne Zugriff auf dieses Backend.
+        </p>
+
+        <div class="updater-recovery-row" style="margin-bottom:.6rem;">
+            <label style="min-width:120px;">Empfänger</label>
+            <input type="email" id="recoveryEmailInput" placeholder="admin@example.com" style="flex:1;">
+        </div>
+        <div class="updater-recovery-row" style="margin-bottom:.6rem;">
+            <label style="min-width:120px;">Absender (optional)</label>
+            <input type="email" id="recoverySenderInput" placeholder="leer lassen, um Empfängeradresse zu verwenden" style="flex:1;">
+        </div>
+        <div style="font-size:.78rem;color:var(--updater-text-muted);margin-left:120px;margin-bottom:.8rem;line-height:1.5;">
+            Lasse das Absender-Feld leer, außer dein Mailserver verlangt eine bestimmte From-Adresse. Bei Plesk/cPanel
+            verlangen die meisten Shared-Hoster, dass From eine echte Mailbox auf dem Server ist — schlägt die Test-Mail fehl,
+            setze Absender auf eine in Plesk angelegte, echte Mailbox-Adresse.
+        </div>
+
+        <button class="updater-btn updater-btn-secondary" onclick="updaterSaveRecoveryEmail()" style="font-size:.85rem;padding:.45rem .9rem;">Speichern</button>
+        <button class="updater-btn" onclick="updaterSendTestRecoveryEmail()" style="font-size:.85rem;padding:.45rem .9rem;">Test-Mail senden</button>
+        <span id="recoveryEmailStatus" style="margin-left:.7rem;font-size:.85rem;"></span>
+    </div>
+
+    {# ── Server settings (PHP CLI binary) ─────────────────────────── #}
+    <div class="updater-card">
+        <h3>⚙️ PHP-CLI-Einstellungen</h3>
+        <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
+            Updates und Restores laufen in einem Background-PHP-Prozess. Wir brauchen den <strong>absoluten Pfad zur PHP-CLI-Binary</strong>
+            (nicht die FPM/Web-Version). Bei Plesk sieht das typischerweise so aus:
+            <code>/opt/plesk/php/8.4/bin/php</code> — der gleiche Pfad, den auch der Contao Manager verwendet.
+            Leer lassen für Auto-Erkennung.
+        </p>
+
+        <div class="updater-sched-row">
+            <label>PHP-Binary</label>
+            <input type="text" id="runtimePhpBinary" placeholder="(Auto-Erkennung, leer lassen, wenn unsicher)" style="font-family:monospace;">
+        </div>
+
+        <div id="runtimeCandidates" style="margin-left:95px;margin-top:.4rem;font-size:.8rem;"></div>
+
+        <div class="updater-sched-actions" style="margin-top:.8rem;">
+            <button class="updater-btn updater-btn-secondary" onclick="updaterTestPhpBinary()" style="font-size:.85rem;padding:.4rem .9rem;">🔍 Testen</button>
+            <button class="updater-btn" onclick="updaterSaveRuntime()" style="font-size:.85rem;padding:.4rem .9rem;">💾 Speichern</button>
+            <span id="runtimeResult" style="font-size:.85rem;align-self:center;margin-left:.5rem;"></span>
+        </div>
+    </div>
+
+    </div> {# end tab: settings #}
+
+    {# ── TAB: Recovery ───────────────────────────────────────────── #}
+    <div class="updater-tab-content" data-tab-panel="recovery">
+
+    {# ── Recovery Panel filename ─────────────────────────────────── #}
+    <div class="updater-card">
+        <h3>🛟 Recovery-Panel-Dateiname</h3>
+        <p style="color:var(--updater-text-muted);font-size:.88rem;margin:.4rem 0 .9rem;line-height:1.5;">
+            Das Standalone-Recovery-Panel wird beim Kernel-Boot nach <code>public/&lt;Dateiname&gt;</code> kopiert.
+            Ein eigener Dateiname erschwert das Auffinden durch Scanner (Security through Obscurity zusätzlich
+            zur Token-Authentifizierung). Muss auf <code>.php</code> enden, nur Buchstaben/Zahlen/<code>._-</code>,
+            max. 60 Zeichen.
+        </p>
+
+        <div class="updater-sched-row">
+            <label>Dateiname</label>
+            <input type="text" id="runtimeRecoveryPanelFilename" placeholder="_updater-recovery.php" style="font-family:monospace;" maxlength="64">
+        </div>
+        <div style="margin-left:95px;margin-top:.3rem;font-size:.78rem;color:var(--updater-text-muted);">
+            Beispiel: <code>secret-panel-xyz.php</code> → erreichbar unter <code>https://deine-site/secret-panel-xyz.php</code>.
+            Beim Umbenennen wird die vorherige Datei automatisch beim nächsten Boot entfernt.
+        </div>
+
+        <div class="updater-sched-actions" style="margin-top:.8rem;">
+            <button class="updater-btn" onclick="updaterSaveRecoveryPanelFilename()" style="font-size:.85rem;padding:.4rem .9rem;">💾 Speichern</button>
+            <span id="runtimeRecoveryPanelResult" style="font-size:.85rem;align-self:center;margin-left:.5rem;"></span>
+        </div>
+    </div>
+
+    {# ── Why restore lives here, not in the Contao backend ─────── #}
+    <div class="updater-card" style="background:rgba(95,169,215,.08);border-left:4px solid #5fa9d7;">
+        <h3 style="margin-top:0;">↩️ Wie Restore in diesem Bundle funktioniert</h3>
+        <p style="color:var(--updater-text);font-size:.9rem;margin:.3rem 0 .6rem;line-height:1.55;">
+            Restore ist eine <strong>Out-of-Band-Operation</strong> — bewusst wird sie <em>nicht</em> aus
+            diesem Contao-Backend heraus ausgelöst. Zwei Gründe:
+        </p>
+        <ul style="color:var(--updater-text);font-size:.88rem;margin:0 0 .8rem 1.2rem;line-height:1.55;">
+            <li>Wenn Contao läuft, brauchst du meistens keinen Restore. Wenn du einen brauchst, ist Contao wahrscheinlich kaputt — und du kommst ohnehin nicht mehr an diesen Tab.</li>
+            <li><code>vendor/</code> wiederherzustellen, während Symfony aus demselben Verzeichnis liest, ist gefährlich — das Backend würde mitten im Restore abstürzen.</li>
+        </ul>
+        <p style="color:var(--updater-text);font-size:.9rem;margin:0 0 0;line-height:1.55;">
+            Nutze eines der beiden Recovery-Panels unten. Beide haben ihre eigene tokenbasierte Authentifizierung und
+            laufen unabhängig vom Contao-Backend.
+        </p>
+    </div>
+
+    {# ── Standalone Recovery Panel (file-based, framework-independent) ── #}
+    <div class="updater-card" style="border-left: 4px solid #c89a3a;">
+        <h3>🆘 Standalone-Recovery-Panel (funktioniert auch bei defektem Contao)</h3>
+        <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;line-height:1.5;">
+            Das ist ein separates <strong>Single-File-PHP-Skript</strong>, das automatisch unter
+            <code>public/_updater-recovery.php</code> installiert wird. Es läuft <strong>ohne Symfony, Composer oder Contao</strong> —
+            selbst wenn ein verpfuschtes Update das ganze Framework zerlegt, erreichst du es noch über den Webserver
+            und kannst aus einem Backup wiederherstellen.
+        </p>
+
+        <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;line-height:1.5;">
+            <strong>So nutzt du es im Notfall:</strong>
+            <br>1. Öffne <a id="updaterStandaloneUrl" href="#" target="_blank" rel="noopener" style="color:var(--updater-text-link);font-family:monospace;">/_updater-recovery.php</a> im Browser
+            <br>2. Der Browser zeigt einen Basic-Auth-Dialog → BELIEBIGEN Benutzernamen und deinen Access-Token (siehe Token-Bereich unten) als Passwort eintragen
+            <br>3. Backup auswählen und direkt wiederherstellen
+        </p>
+
+        <div style="background:rgba(248,195,64,.1);border-left:3px solid #c89a3a;padding:.6rem .9rem;font-size:.82rem;line-height:1.5;color:#ffe6a8;border-radius:3px;">
+            <strong>⚠️ Speichere URL + Token JETZT außerhalb von Contao</strong> (Passwortmanager, Notizzettel, egal wo).
+            Wenn Contao ausfällt, kannst du sie von dieser Seite nicht mehr kopieren.
+        </div>
+
+        <p style="font-size:.78rem;color:var(--updater-text-soft);margin-top:.8rem;">
+            Die Datei wird bei jedem Bundle-Update neu erzeugt — du musst nichts manuell pflegen.
+            Sie nutzt den unten angezeigten Access-Token.
+        </p>
+    </div>
+
+    {# ── Token management for the standalone panel ───────────────── #}
+    <div class="updater-card">
+        <h3>🔑 Access-Token</h3>
+        <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;line-height:1.5;">
+            Das Standalone-Recovery-Panel nutzt HTTP Basic Auth. Der Benutzername ist beliebig;
+            das Passwort ist der hier verwaltete Access-Token.
+        </p>
+
+        <div id="updaterPanelTokenArea">
+            <p style="font-size:.85rem;color:var(--updater-text-muted);">Lädt…</p>
+        </div>
+
+        <details style="margin-top:1.2rem;">
+            <summary style="cursor:pointer;font-size:.85rem;color:var(--updater-text-muted);">
+                ▸ Token per <code>.env.local</code> fixieren
+            </summary>
+            <div style="font-size:.85rem;padding:.8rem 0;line-height:1.6;color:var(--updater-text);">
+                <p>Für einen stabilen, versionierbaren Token diese Zeile in <code>.env.local</code> einfügen:</p>
+                <pre class="updater-cron-cmd">VTINNOVATIONS_GUARDIAN_TOKEN=your-very-long-secret-token-here</pre>
+                <p>Das Bundle bevorzugt env vor der auto-generierten Datei. Nach dem Bearbeiten von <code>.env.local</code> den Symfony-Cache leeren.</p>
+                <p style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);padding:.6rem .8rem;border-radius:3px;">
+                    ⚠️ <strong>Teste das Panel VOR einem Update.</strong> Wenn du es jetzt nicht erreichst,
+                    erreichst du es im Ernstfall auch nicht.
+                </p>
+            </div>
+        </details>
+    </div>
+
+    </div> {# end tab: recovery #}
+
+    {# ── Upgrade dialog (shown when a Free user clicks a locked tab) ─── #}
+    <div class="updater-upgrade-modal" id="updaterUpgradeModal" onclick="if(event.target===this) updaterCloseUpgradeModal()">
+        <div class="box">
+            <h3 id="updaterUpgradeTitle">🔒 Diese Funktion braucht das Pro-Paket</h3>
+            <p id="updaterUpgradeBody">
+                Du bist gerade im <strong>Free-Paket</strong>. Damit steht dir das
+                <strong>Manuelle Backup</strong> zur Verfügung.
+            </p>
+            <p>
+                Mit der <strong>Pro-Lizenz</strong> schaltest du frei:
+            </p>
+            <ul style="margin:.4rem 0 .6rem 1.1rem;padding:0;color:var(--updater-text-muted);font-size:.88rem;line-height:1.6;">
+                <li>Update-Jobs (Composer full / patch / selektiv)</li>
+                <li>Restore / Recovery aus Snapshots</li>
+                <li>Geplante Backups (Mini + Full mit E-Mail-Benachrichtigung)</li>
+                <li>Standalone-Recovery-Panel für den Notfall</li>
+            </ul>
+            <p style="font-size:.82rem;">
+                Lizenz beziehbar über <a href="https://www.v-t.one" target="_blank" rel="noopener" style="color:var(--updater-text-link);font-weight:600;">v-t.one</a>.
+                Aktivierung im Tab <strong>Einstellungen → Pro-Lizenz</strong>.
+            </p>
+            <div class="actions">
+                <button class="updater-btn updater-btn-secondary" onclick="updaterCloseUpgradeModal()">Schließen</button>
+                <button class="updater-btn" onclick="updaterCloseUpgradeModal(); updaterSwitchTab('settings', true);">→ Zu den Einstellungen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Contao 5's Turbo replaces the entire body on a full-page render, which
+// re-executes this inline <script>. Top-level `const`/`let` would throw
+// "already been declared"; we use `var` for module-globals instead so a
+// second execution silently overwrites without error. Function
+// declarations already tolerate redeclaration.
+var UPDATER_ANALYSE_URL        = '{{ path('vtinnovations_guardian_analyse') }}';
+var UPDATER_PACKAGES_URL       = '{{ path('vtinnovations_guardian_packages') }}';
+var UPDATER_BACKUP_CREATE_URL  = '{{ path('vtinnovations_guardian_backup_create') }}';
+var UPDATER_BACKUP_LIST_URL    = '{{ path('vtinnovations_guardian_backup_list') }}';
+var UPDATER_BACKUP_DELETE_URL  = '{{ path('vtinnovations_guardian_backup_delete') }}';
+var UPDATER_SCHED_GET_URL      = '{{ path('vtinnovations_guardian_schedule_get') }}';
+var UPDATER_SCHED_SAVE_URL     = '{{ path('vtinnovations_guardian_schedule_save') }}';
+var UPDATER_SCHED_RUN_URL      = '{{ path('vtinnovations_guardian_schedule_run') }}';
+var UPDATER_SCHED_TEST_EMAIL_URL = '{{ path('vtinnovations_guardian_schedule_test_email') }}';
+var UPDATER_PANEL_GET_URL      = '{{ path('vtinnovations_guardian_panel_get') }}';
+var UPDATER_PANEL_ROTATE_URL   = '{{ path('vtinnovations_guardian_panel_rotate') }}';
+var UPDATER_JOB_START_URL      = '{{ path('vtinnovations_guardian_job_start') }}';
+var UPDATER_JOB_STATUS_URL     = '{{ path('vtinnovations_guardian_job_status') }}';
+var UPDATER_JOB_LOG_URL        = '{{ path('vtinnovations_guardian_job_log') }}';
+var UPDATER_JOB_ARCHIVE_URL    = '{{ path('vtinnovations_guardian_job_archive') }}';
+var UPDATER_JOB_CLEAR_STALE_URL = '{{ path('vtinnovations_guardian_job_clear_stale') }}';
+var UPDATER_JOB_ROLLBACK_URL   = '{{ path('vtinnovations_guardian_job_rollback') }}';
+var UPDATER_RUNTIME_GET_URL    = '{{ path('vtinnovations_guardian_runtime_get') }}';
+var UPDATER_RUNTIME_SAVE_URL   = '{{ path('vtinnovations_guardian_runtime_save') }}';
+var UPDATER_RUNTIME_TEST_URL   = '{{ path('vtinnovations_guardian_runtime_test') }}';
+var UPDATER_RUNTIME_TEST_EMAIL_URL = '{{ path('vtinnovations_guardian_runtime_test_recovery_email') }}';
+var UPDATER_LICENSE_STATUS_URL   = '{{ path('vtinnovations_guardian_license_status') }}';
+var UPDATER_LICENSE_ACTIVATE_URL = '{{ path('vtinnovations_guardian_license_activate') }}';
+var UPDATER_LICENSE_CLEAR_URL    = '{{ path('vtinnovations_guardian_license_clear') }}';
+var UPDATER_BACKUPS_LIST_URL   = '{{ path('vtinnovations_guardian_backup_list') }}';
+
+var updaterPackages = [];
+
+function updaterEscape(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str ?? '');
+    return div.innerHTML;
+}
+
+// ── Pre-update analysis ─────────────────────────────────────────────
+
+function updaterRunAnalysis() {
+    const btn    = document.getElementById('updaterAnalyseBtn');
+    const result = document.getElementById('updaterAnalysisResult');
+
+    btn.disabled    = true;
+    btn.textContent = '⏳ Analyse läuft...';
+    result.innerHTML = '<div style="color:var(--updater-text-soft);padding:.8rem;">Bitte warten...</div>';
+
+    fetch(UPDATER_ANALYSE_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            result.innerHTML = '<div class="updater-result-summary error">❌ Fehler: '
+                + updaterEscape(data.error || 'Unbekannter Fehler') + '</div>';
+            return;
+        }
+
+        const r       = data.result;
+        const summary = r.summary;
+        const cls     = summary.errors > 0 ? 'error' : (summary.warnings > 0 ? 'warning' : 'ok');
+
+        let html = '<div class="updater-result-summary ' + cls + '">'
+            + updaterEscape(summary.message) + '<br>'
+            + '<span style="font-weight:normal;font-size:.85rem;">'
+            + '✅ ' + summary.ok + ' OK · ⚠️ ' + summary.warnings
+            + ' Warnungen · ❌ ' + summary.errors + ' Fehler'
+            + '</span></div>';
+
+        for (const key in r.checks) {
+            const c    = r.checks[key];
+            const icon = c.status === 'ok' ? '✅' : (c.status === 'warning' ? '⚠️' : '❌');
+            html += '<div class="updater-check-row">'
+                + '<div class="updater-check-icon">' + icon + '</div>'
+                + '<div class="updater-check-body">'
+                +   '<div class="updater-check-label">' + updaterEscape(c.label) + '</div>'
+                +   '<div class="updater-check-message">' + updaterEscape(c.message) + '</div>'
+                + '</div>'
+                + '</div>';
+        }
+
+        result.innerHTML = html;
+    })
+    .catch(e => {
+        result.innerHTML = '<div class="updater-result-summary error">❌ '
+            + updaterEscape(e.message || e) + '</div>';
+    })
+    .finally(() => {
+        btn.disabled    = false;
+        btn.textContent = '🔍 Analyse erneut ausführen';
+    });
+}
+
+// ── Package overview ────────────────────────────────────────────────
+
+function updaterLoadPackages(forceRefresh) {
+    const loadBtn    = document.getElementById('updaterPkgLoadBtn');
+    const refreshBtn = document.getElementById('updaterPkgRefreshBtn');
+    const result     = document.getElementById('updaterPkgResult');
+    const filter     = document.getElementById('updaterPkgFilter');
+    const onlyLabel  = document.getElementById('updaterPkgOnlyUpdatesLabel');
+
+    const activeBtn = forceRefresh ? refreshBtn : loadBtn;
+    activeBtn.disabled    = true;
+    const originalLabel   = activeBtn.textContent;
+    activeBtn.textContent = forceRefresh ? '⏳ Packagist wird abgefragt...' : '⏳ Lädt...';
+
+    if (!forceRefresh) {
+        result.innerHTML = '<div style="color:var(--updater-text-soft);padding:.8rem;">Installierte Pakete werden geladen...</div>';
+    }
+
+    const url = UPDATER_PACKAGES_URL + (forceRefresh ? '?refresh=1' : '');
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            result.innerHTML = '<div class="updater-result-summary error">❌ '
+                + updaterEscape(data.error || 'Unbekannter Fehler') + '</div>';
+            return;
+        }
+
+        updaterPackages = data.packages;
+
+        // Show controls now that we have data
+        refreshBtn.style.display = '';
+        filter.style.display     = '';
+        onlyLabel.style.display  = '';
+
+        updaterRenderPackages(data.stats);
+    })
+    .catch(e => {
+        result.innerHTML = '<div class="updater-result-summary error">❌ '
+            + updaterEscape(e.message || e) + '</div>';
+    })
+    .finally(() => {
+        activeBtn.disabled    = false;
+        activeBtn.textContent = forceRefresh ? '🔄 Verfügbare Updates aktualisieren' : '📦 Pakete neu laden';
+    });
+}
+
+function updaterRenderPackages(stats) {
+    const result = document.getElementById('updaterPkgResult');
+    const filter = (document.getElementById('updaterPkgFilter').value || '').toLowerCase();
+    const onlyUpdates = document.getElementById('updaterPkgOnlyUpdates').checked;
+
+    let pkgs = updaterPackages;
+    if (filter) {
+        pkgs = pkgs.filter(p => p.name.toLowerCase().includes(filter));
+    }
+    if (onlyUpdates) {
+        pkgs = pkgs.filter(p => p.has_update);
+    }
+
+    let metaHtml = '';
+    if (stats) {
+        const cachedNote = stats.cached
+            ? ' <span style="color:var(--updater-text-soft);">(gecacht — für Refresh „Updates prüfen" klicken)</span>'
+            : '';
+        const errorNote = stats.error
+            ? '<div class="updater-result-summary warning">⚠️ Update-Prüfung unvollständig: '
+                + updaterEscape(stats.error) + '</div>'
+            : '';
+        metaHtml = errorNote
+            + '<div class="updater-pkg-meta">'
+            + 'Gesamt: <strong>' + stats.total + '</strong> Pakete · '
+            + 'Updates verfügbar: <strong>' + stats.updates + '</strong> · '
+            + 'Abandoned: <strong>' + stats.abandoned + '</strong>'
+            + cachedNote
+            + '</div>';
+    }
+
+    if (pkgs.length === 0) {
+        result.innerHTML = metaHtml
+            + '<div class="updater-empty">Keine Pakete passen zum aktuellen Filter.</div>';
+        return;
+    }
+
+    const rows = pkgs.map(updaterRenderPkgRow).join('');
+
+    result.innerHTML = metaHtml
+        + '<table class="updater-pkg-table">'
+        +   '<thead><tr>'
+        +     '<th>Paket</th>'
+        +     '<th style="width:120px;">Aktuell</th>'
+        +     '<th style="width:160px;">Verfügbar</th>'
+        +     '<th style="width:140px;">Status</th>'
+        +   '</tr></thead>'
+        +   '<tbody>' + rows + '</tbody>'
+        + '</table>';
+}
+
+function updaterApplyFilter() {
+    // Re-render with same stats reference (we don't have it here, so render without)
+    // This is fine — the meta block will be rebuilt only on full reload
+    const filter = (document.getElementById('updaterPkgFilter').value || '').toLowerCase();
+    const onlyUpdates = document.getElementById('updaterPkgOnlyUpdates').checked;
+
+    let pkgs = updaterPackages;
+    if (filter) pkgs = pkgs.filter(p => p.name.toLowerCase().includes(filter));
+    if (onlyUpdates) pkgs = pkgs.filter(p => p.has_update);
+
+    const result = document.getElementById('updaterPkgResult');
+    // Keep the meta line if present (preserved as the first child)
+    const meta = result.querySelector('.updater-pkg-meta');
+    const metaHtml = meta ? meta.outerHTML : '';
+
+    if (pkgs.length === 0) {
+        result.innerHTML = metaHtml + '<div class="updater-empty">Keine Pakete entsprechen dem aktuellen Filter.</div>';
+        return;
+    }
+
+    const rows = pkgs.map(updaterRenderPkgRow).join('');
+
+    result.innerHTML = metaHtml
+        + '<table class="updater-pkg-table">'
+        +   '<thead><tr>'
+        +     '<th>Paket</th>'
+        +     '<th style="width:120px;">Aktuell</th>'
+        +     '<th style="width:160px;">Verfügbar</th>'
+        +     '<th style="width:140px;">Status</th>'
+        +   '</tr></thead>'
+        +   '<tbody>' + rows + '</tbody>'
+        + '</table>';
+}
+
+
+// ── Backup management ───────────────────────────────────────────────
+
+function updaterCreateBackup() {
+    const wantsFiles = document.getElementById('updaterBkpFiles').checked;
+    let confirmMsg = 'Backup jetzt erstellen?\n\nEs läuft synchron — lasse diesen Tab offen, bis es fertig ist.';
+    if (wantsFiles) {
+        confirmMsg += '\n\n⚠️ files/ ist ausgewählt — das kann bei vielen Uploads mehrere Minuten dauern.';
+    }
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+
+    const btn    = document.getElementById('updaterBackupBtn');
+    const result = document.getElementById('updaterBackupResult');
+
+    btn.disabled    = true;
+    btn.innerHTML   = '<span class="updater-spinner"></span>Backup wird erstellt...';
+    result.innerHTML = '<div style="color:var(--updater-text-soft);padding:.8rem;">Backup läuft. Bitte warten — das läuft synchron, die Seite lädt erst neu, wenn es fertig ist.</div>';
+
+    const components = {
+        vendor:    document.getElementById('updaterBkpVendor').checked,
+        templates: document.getElementById('updaterBkpTemplates').checked,
+        files:     document.getElementById('updaterBkpFiles').checked,
+        assets:    document.getElementById('updaterBkpAssets').checked,
+    };
+
+    fetch(UPDATER_BACKUP_CREATE_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ components: components }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            result.innerHTML = '<div class="updater-result-summary error">❌ Backup fehlgeschlagen: '
+                + updaterEscape(data.error || 'Unbekannter Fehler') + '</div>';
+            return;
+        }
+
+        const m = data.manifest;
+        let html = '<div class="updater-result-summary ok">✅ Backup erstellt: <strong>'
+            + updaterEscape(data.name) + '</strong> · ' + updaterEscape(m.total_size) + '</div>';
+
+        // Show component summary
+        html += '<div style="margin-top:.5rem;font-size:.9rem;">';
+        const renderRow = (label, info) => {
+            if (!info) return '';
+            const ok = info.success ? '✅' : '❌';
+            return '<div>' + ok + ' ' + label + ': <code>' + updaterEscape(info.method)
+                + '</code> — ' + updaterEscape(info.size) + '</div>';
+        };
+
+        html += renderRow('Datenbank',         m.database);
+        html += renderRow('vendor/',           m.vendor);
+        html += renderRow('templates/',        m.templates);
+        html += renderRow('contao/templates/', m.contao_tpl);
+        html += renderRow('files/',            m.files);
+        html += renderRow('assets/',           m.assets);
+        html += '</div>';
+
+        // Show log
+        if (data.log && data.log.length) {
+            html += '<div class="updater-backup-log">' + data.log.map(updaterEscape).join('\n') + '</div>';
+        }
+
+        result.innerHTML = html;
+        updaterReloadBackupList();
+    })
+    .catch(e => {
+        result.innerHTML = '<div class="updater-result-summary error">❌ '
+            + updaterEscape(e.message || e) + '</div>';
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.textContent = '💾 Weiteres Backup erstellen';
+    });
+}
+
+function updaterDeleteBackup(name) {
+    if (!confirm('Backup „' + name + '" löschen?\nDas kann nicht rückgängig gemacht werden.')) {
+        return;
+    }
+
+    fetch(UPDATER_BACKUP_DELETE_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ name: name }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            alert('Löschen fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'));
+            return;
+        }
+        updaterReloadBackupList();
+    });
+}
+
+function updaterReloadBackupList() {
+    const list = document.getElementById('updaterBackupList');
+
+    fetch(UPDATER_BACKUP_LIST_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success || !data.backups || data.backups.length === 0) {
+            list.innerHTML = '<div class="updater-empty">Noch keine Backups. Nutze „Backup jetzt erstellen" oder warte, bis vor dem nächsten Update automatisch eines angelegt wird.</div>';
+            return;
+        }
+
+        let html = '';
+        for (const b of data.backups) {
+            html += '<div class="updater-backup-row">'
+                + '<div><strong>' + updaterEscape(b.name) + '</strong>'
+                + '<div style="font-size:.8rem;color:var(--updater-text-soft);">Contao '
+                + updaterEscape(b.contao_version) + ' · ' + updaterEscape(b.total_size) + '</div></div>'
+                + '<span style="color:var(--updater-text-soft);font-size:.85rem;">' + updaterEscape(b.created_at) + '</span>'
+                + '<span style="color:var(--updater-text-very-soft);font-size:.8rem;">' + updaterEscape(b.path) + '</span>'
+                + '<button class="updater-btn updater-btn-delete" onclick="updaterDeleteBackup(\''
+                +   updaterEscape(b.name).replace(/'/g, "\\'") + '\')">Löschen</button>'
+                + '</div>';
+        }
+        list.innerHTML = html;
+    });
+}
+
+
+// ── Scheduled backups ───────────────────────────────────────────────
+
+function updaterFormatDate(iso) {
+    if (!iso) return '—';
+    try {
+        const d = new Date(iso);
+        return d.toLocaleString();
+    } catch (e) {
+        return iso;
+    }
+}
+
+function updaterToggleScheduleRows(prefix) {
+    const freq = document.getElementById('sched' + prefix + 'Frequency').value;
+    const isInterval = (freq === '5min' || freq === '15min' || freq === 'hourly');
+
+    // Time-of-day only matters for daily/weekly/monthly
+    const timeInput = document.getElementById('sched' + prefix + 'Time');
+    if (timeInput) {
+        timeInput.closest('.updater-sched-row').style.display = isInterval ? 'none' : '';
+    }
+
+    document.getElementById('sched' + prefix + 'WeekdayRow').style.display = (freq === 'weekly')  ? '' : 'none';
+    document.getElementById('sched' + prefix + 'DomRow').style.display     = (freq === 'monthly') ? '' : 'none';
+}
+
+function updaterRenderScheduleState(type, info) {
+    const el = document.getElementById('sched' + (type === 'mini' ? 'Mini' : 'Full') + 'State');
+    if (!info) { el.innerHTML = ''; return; }
+
+    let html = '';
+
+    // In-progress indicator (overrides the static "last run" line)
+    if (info.in_progress && info.started_at) {
+        const startedTs = new Date(info.started_at).getTime();
+        const elapsedSec = Math.max(0, Math.round((Date.now() - startedTs) / 1000));
+        const mins = Math.floor(elapsedSec / 60);
+        const secs = elapsedSec % 60;
+        html += '<div class="updater-sched-status warning">'
+              + '<span class="updater-spinner"></span>'
+              + '<strong>Läuft...</strong> gestartet '
+              + updaterFormatDate(info.started_at)
+              + ' · vergangen: ' + (mins > 0 ? mins + 'm ' : '') + secs + 's'
+              + '</div>';
+    } else if (info.last_run) {
+        const cls = info.last_status === 'success' ? 'success'
+                  : info.last_status === 'error'   ? 'error'
+                  : 'skipped';
+        html += '<div class="updater-sched-status ' + cls + '">'
+              + '<strong>Letzter Lauf:</strong> ' + updaterFormatDate(info.last_run)
+              + ' · ' + updaterEscape(info.last_status || '');
+        if (info.last_message) {
+            html += '<br><span style="font-weight:normal;font-size:.8rem;">' + updaterEscape(info.last_message) + '</span>';
+        }
+        html += '</div>';
+    } else {
+        html += '<div class="updater-sched-status skipped"><em>Noch nie ausgeführt.</em></div>';
+    }
+
+    if (info.enabled && info.next_run_human) {
+        html += '<div style="font-size:.8rem;color:var(--updater-text-muted);margin-top:.4rem;">'
+              + '<strong>Nächster Lauf:</strong> ' + updaterEscape(info.next_run_human)
+              + ' <span style="color:var(--updater-text-very-soft);">(ungefähr — feuert beim ersten Seitenaufruf nach diesem Zeitpunkt)</span>'
+              + '</div>';
+    }
+    el.innerHTML = html;
+}
+
+function updaterLoadSchedule() {
+    fetch(UPDATER_SCHED_GET_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+
+        const c = data.config;
+
+        // Mini
+        document.getElementById('schedMiniEnabled').checked     = !!c.mini.enabled;
+        document.getElementById('schedMiniFrequency').value     = c.mini.frequency;
+        document.getElementById('schedMiniTime').value          = c.mini.time;
+        document.getElementById('schedMiniWeekday').value       = String(c.mini.weekday);
+        document.getElementById('schedMiniDom').value           = c.mini.day_of_month;
+        document.getElementById('schedMiniRetention').value     = c.mini.retention;
+
+        // Full
+        document.getElementById('schedFullEnabled').checked     = !!c.full.enabled;
+        document.getElementById('schedFullFrequency').value     = c.full.frequency;
+        document.getElementById('schedFullTime').value          = c.full.time;
+        document.getElementById('schedFullWeekday').value       = String(c.full.weekday);
+        document.getElementById('schedFullDom').value           = c.full.day_of_month;
+        document.getElementById('schedFullRetention').value     = c.full.retention;
+
+        document.getElementById('schedFullCompVendor').checked    = !!c.full.components.vendor;
+        document.getElementById('schedFullCompTemplates').checked = !!c.full.components.templates;
+        document.getElementById('schedFullCompFiles').checked     = !!c.full.components.files;
+        document.getElementById('schedFullCompAssets').checked    = !!c.full.components.assets;
+
+        // Storage + notifications
+        document.getElementById('schedStoragePath').value      = c.storage_path || '';
+        document.getElementById('schedEmail').value            = c.notifications.email || '';
+        document.getElementById('schedSenderEmail').value      = c.notifications.sender_email || '';
+        document.getElementById('schedSenderName').value       = c.notifications.sender_name || 'Guardian';
+        document.getElementById('schedNotifySuccess').checked  = !!c.notifications.on_success;
+        document.getElementById('schedNotifyFailure').checked  = !!c.notifications.on_failure;
+
+        updaterToggleScheduleRows('Mini');
+        updaterToggleScheduleRows('Full');
+
+        if (data.state) {
+            updaterRenderScheduleState('mini', data.state.mini);
+            updaterRenderScheduleState('full', data.state.full);
+        }
+    });
+}
+
+function updaterCollectScheduleConfig() {
+    return {
+        mini: {
+            enabled:      document.getElementById('schedMiniEnabled').checked,
+            frequency:    document.getElementById('schedMiniFrequency').value,
+            time:         document.getElementById('schedMiniTime').value,
+            weekday:      parseInt(document.getElementById('schedMiniWeekday').value, 10),
+            day_of_month: parseInt(document.getElementById('schedMiniDom').value, 10) || 1,
+            retention:    parseInt(document.getElementById('schedMiniRetention').value, 10) || 7,
+        },
+        full: {
+            enabled:      document.getElementById('schedFullEnabled').checked,
+            frequency:    document.getElementById('schedFullFrequency').value,
+            time:         document.getElementById('schedFullTime').value,
+            weekday:      parseInt(document.getElementById('schedFullWeekday').value, 10),
+            day_of_month: parseInt(document.getElementById('schedFullDom').value, 10) || 1,
+            retention:    parseInt(document.getElementById('schedFullRetention').value, 10) || 4,
+            components: {
+                vendor:    document.getElementById('schedFullCompVendor').checked,
+                templates: document.getElementById('schedFullCompTemplates').checked,
+                files:     document.getElementById('schedFullCompFiles').checked,
+                assets:    document.getElementById('schedFullCompAssets').checked,
+            },
+        },
+        storage_path: document.getElementById('schedStoragePath').value.trim() || null,
+        notifications: {
+            email:        document.getElementById('schedEmail').value.trim(),
+            sender_email: document.getElementById('schedSenderEmail').value.trim(),
+            sender_name:  document.getElementById('schedSenderName').value.trim(),
+            on_success:   document.getElementById('schedNotifySuccess').checked,
+            on_failure:   document.getElementById('schedNotifyFailure').checked,
+        },
+    };
+}
+
+function updaterSaveSchedule() {
+    const cfg    = updaterCollectScheduleConfig();
+    const result = document.getElementById('schedSaveResult');
+    result.textContent = 'Speichern...';
+    result.style.color = 'var(--updater-text-muted)';
+
+    fetch(UPDATER_SCHED_SAVE_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify(cfg),
+    })
+    .then(r => r.json().then(data => ({ ok: r.ok, data: data })))
+    .then(({ ok, data }) => {
+        if (!ok || !data.success) {
+            result.textContent = '❌ ' + (data.error || 'Speichern fehlgeschlagen');
+            result.style.color = 'var(--updater-result-err-fg)';
+            return;
+        }
+
+        let msg = '✅ Gespeichert';
+        if (data.path_warnings && data.path_warnings.length > 0) {
+            msg += ' — ⚠️ ' + data.path_warnings.join(' ');
+        }
+        result.textContent = msg;
+        result.style.color = 'var(--updater-result-ok-fg)';
+
+        if (data.state) {
+            updaterRenderScheduleState('mini', data.state.mini);
+            updaterRenderScheduleState('full', data.state.full);
+        }
+    })
+    .catch(e => {
+        result.textContent = '❌ ' + (e.message || e);
+        result.style.color = 'var(--updater-result-err-fg)';
+    });
+}
+
+function updaterRunSchedule(type) {
+    if (!confirm('Ein ' + type + '-Backup jetzt ausführen?\n\nDies ignoriert den Zeitplan und stößt sofort ein Backup an.')) return;
+
+    const stateEl = document.getElementById('sched' + (type === 'mini' ? 'Mini' : 'Full') + 'State');
+    stateEl.innerHTML = '<div class="updater-sched-status skipped">⏳ Läuft...</div>';
+
+    fetch(UPDATER_SCHED_RUN_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ type: type }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.state) {
+            updaterRenderScheduleState('mini', data.state.mini);
+            updaterRenderScheduleState('full', data.state.full);
+        }
+        if (data.success) {
+            updaterReloadBackupList();
+        }
+    });
+}
+
+// ── TAB SYSTEM ────────────────────────────────────────────────────────
+//
+// Tabs persist via the URL hash so links can deep-link into a specific
+// section and the browser back button works as expected.
+
+var UPDATER_DEFAULT_TAB = 'dashboard';
+var UPDATER_VALID_TABS  = ['dashboard', 'update', 'backup', 'recovery', 'settings'];
+
+// License state. Three tiers:
+//   - no license  → only Dashboard + Settings usable
+//   - Free        → adds Backup (manual)
+//   - Pro         → adds Update + Recovery + scheduled backups + panel token
+//
+// Server-seeded so updaterInitTabs() has the correct state on the very
+// first hash-driven switchTab; the async /license/status refresh only
+// picks up runtime changes.
+var UPDATER_PRO      = {{ is_pro      ? 'true' : 'false' }};
+var UPDATER_LICENSED = {{ is_licensed ? 'true' : 'false' }};
+var UPDATER_PRO_TABS      = ['update', 'recovery'];
+var UPDATER_LICENSED_TABS = ['backup'];
+
+function updaterApplyLicenseGating() {
+    // Root classes drive all visual gating via CSS (see the top of the
+    // stylesheet). Server sets both on first render to avoid FOUC; JS keeps
+    // them in sync when the license state changes at runtime.
+    const root = document.getElementById('updaterRoot');
+    if (root) {
+        root.classList.toggle('updater-not-pro',    !UPDATER_PRO);
+        root.classList.toggle('updater-no-license', !UPDATER_LICENSED);
+    }
+
+    updaterRenderPlan(UPDATER_PRO, UPDATER_LICENSED);
+
+    // Drop .active from any locked panel + bounce off a now-inaccessible tab.
+    const lockedTabs = [];
+    if (!UPDATER_PRO)      lockedTabs.push(...UPDATER_PRO_TABS);
+    if (!UPDATER_LICENSED) lockedTabs.push(...UPDATER_LICENSED_TABS);
+    lockedTabs.forEach(tab => {
+        const panel = document.querySelector('.updater-tab-content[data-tab-panel="' + tab + '"]');
+        if (panel) panel.classList.remove('active');
+    });
+    const active = document.querySelector('.updater-tab-btn.active');
+    if (active && lockedTabs.includes(active.dataset.tab)) {
+        document.querySelectorAll('.updater-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === UPDATER_DEFAULT_TAB));
+        document.querySelectorAll('.updater-tab-content').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === UPDATER_DEFAULT_TAB));
+    }
+}
+
+function updaterRenderPlan(pro, licensed) {
+    const badge   = document.getElementById('updaterPlanBadge');
+    const tagline = document.getElementById('updaterPlanTagline');
+    const list    = document.getElementById('updaterPlanFeatures');
+    if (!badge || !tagline || !list) return;
+
+    let cls, label, msg;
+    if (pro) {
+        cls   = 'pro';
+        label = '⭐ Pro-Paket aktiv';
+        msg   = 'Voller Funktionsumfang freigeschaltet — Updates, Restore/Recovery, geplante Backups und das Standalone-Recovery-Panel.';
+    } else if (licensed) {
+        cls   = 'free';
+        label = '🆓 Free-Paket aktiv';
+        msg   = 'Free-Paket: Manuelles Backup verfügbar. Für Updates, Restore/Recovery, geplante Backups und Standalone-Recovery-Panel braucht es eine Pro-Lizenz.';
+    } else {
+        cls   = 'none';
+        label = '🚫 Keine Lizenz';
+        msg   = 'Ohne Lizenz sind alle Funktionen gesperrt. Trage einen Lizenzschlüssel unter Einstellungen → Pro-Lizenz ein. Free-Lizenzen schalten das Manuelle Backup frei, Pro-Lizenzen den vollen Funktionsumfang.';
+    }
+    badge.className   = 'updater-plan-badge ' + cls;
+    badge.textContent = label;
+    tagline.textContent = msg;
+
+    const rows = [
+        ['Manuelles Backup',                licensed],
+        ['Update-Jobs (Composer)',          pro],
+        ['Restore / Recovery',              pro],
+        ['Geplante Backups (Mini + Full)',  pro],
+        ['Standalone-Recovery-Panel',       pro],
+    ];
+    list.innerHTML = rows.map(([lbl, on]) =>
+        '<li class="' + (on ? 'on' : 'off') + '">' + (on ? '✓' : '🔒') + ' ' + updaterEscape(lbl) + '</li>'
+    ).join('');
+}
+
+function updaterOpenUpgradeModal(tier) {
+    const m     = document.getElementById('updaterUpgradeModal');
+    const title = document.getElementById('updaterUpgradeTitle');
+    const body  = document.getElementById('updaterUpgradeBody');
+    if (!m) return;
+    if (title && body) {
+        if (tier === 'none') {
+            title.textContent = '🔒 Für diese Funktion brauchst du mindestens eine Free-Lizenz';
+            body.innerHTML = 'Ohne Lizenz sind alle Funktionen außer Dashboard und Einstellungen gesperrt. '
+                           + 'Eine <strong>kostenlose Free-Lizenz</strong> schaltet das Manuelle Backup frei; '
+                           + 'die <strong>Pro-Lizenz</strong> zusätzlich Updates, Restore/Recovery, geplante '
+                           + 'Backups und das Standalone-Recovery-Panel.';
+        } else {
+            title.textContent = '🔒 Diese Funktion braucht das Pro-Paket';
+            body.innerHTML = 'Du bist gerade im <strong>Free-Paket</strong>. Damit steht dir das '
+                           + '<strong>Manuelle Backup</strong> zur Verfügung. Für Updates, Restore/Recovery, '
+                           + 'geplante Backups und das Standalone-Recovery-Panel brauchst du die Pro-Lizenz.';
+        }
+    }
+    m.classList.add('open');
+}
+
+function updaterCloseUpgradeModal() {
+    const m = document.getElementById('updaterUpgradeModal');
+    if (m) m.classList.remove('open');
+}
+
+// ── Pro-License (v-t.one) ──────────────────────────────────────────
+
+function updaterRenderLicenseState(data) {
+    const state = document.getElementById('proLicenseState');
+    if (!state) return;
+
+    if (!data || !data.has_key) {
+        state.innerHTML = '<span style="color:var(--updater-text-muted);">Keine Lizenz eingetragen — nur Manuelles Backup verfügbar.</span>';
+        return;
+    }
+
+    const parts = [];
+    parts.push('<div><strong>Schlüssel:</strong> <code>' + updaterEscape(data.key_preview || '') + '</code></div>');
+    if (data.domain) {
+        parts.push('<div><strong>Domain:</strong> <code>' + updaterEscape(data.domain) + '</code></div>');
+    }
+    if (data.package) {
+        parts.push('<div><strong>Paket:</strong> <code>' + updaterEscape(data.package) + '</code></div>');
+    }
+    if (data.expires_at) {
+        const d = new Date(data.expires_at * 1000);
+        parts.push('<div><strong>Läuft ab:</strong> ' + d.toLocaleDateString('de-DE') + '</div>');
+    } else if (data.pro) {
+        parts.push('<div><strong>Läuft ab:</strong> unbefristet</div>');
+    }
+    if (data.verified_at) {
+        const d = new Date(data.verified_at * 1000);
+        parts.push('<div style="color:var(--updater-text-muted);font-size:.78rem;">Zuletzt geprüft: ' + d.toLocaleString('de-DE') + '</div>');
+    }
+
+    let badge;
+    if (data.pro) {
+        badge = '<span style="background:var(--updater-result-ok-bg);color:var(--updater-result-ok-fg);padding:.15rem .5rem;border-radius:3px;font-weight:600;">⭐ Pro aktiv</span>';
+    } else if (data.licensed) {
+        badge = '<span style="background:var(--updater-badge-idle-bg);color:var(--updater-badge-idle-fg);padding:.15rem .5rem;border-radius:3px;font-weight:600;">🆓 Free aktiv</span>';
+    } else {
+        badge = '<span style="background:var(--updater-result-err-bg);color:var(--updater-result-err-fg);padding:.15rem .5rem;border-radius:3px;font-weight:600;">✗ Nicht aktiv</span>';
+    }
+    state.innerHTML = '<div style="margin-bottom:.4rem;">' + badge + '</div>' + parts.join('');
+}
+
+function updaterLoadLicenseStatus() {
+    fetch(UPDATER_LICENSE_STATUS_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+        UPDATER_PRO      = !!data.pro;
+        UPDATER_LICENSED = !!data.licensed;
+        updaterApplyLicenseGating();
+        updaterRenderLicenseState(data);
+        const input = document.getElementById('proLicenseInput');
+        if (input && data.key_preview) input.placeholder = data.key_preview;
+    })
+    .catch(()=>{});
+}
+
+function updaterActivateLicense() {
+    const input  = document.getElementById('proLicenseInput');
+    const status = document.getElementById('proLicenseStatus');
+    const key    = (input.value || '').trim();
+
+    if (key === '') {
+        status.style.color = 'var(--updater-result-err-fg)';
+        status.textContent = '❌ Bitte einen Lizenzschlüssel eingeben.';
+        return;
+    }
+
+    status.style.color = 'var(--updater-text-muted)';
+    status.textContent = 'Prüfe bei v-t.one…';
+
+    fetch(UPDATER_LICENSE_ACTIVATE_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ key: key }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        UPDATER_PRO      = !!data.pro;
+        UPDATER_LICENSED = !!data.licensed;
+        updaterApplyLicenseGating();
+        updaterRenderLicenseState(data);
+        if (data.valid) {
+            input.value = '';
+            status.style.color = 'var(--updater-result-ok-fg)';
+            status.textContent = '✓ Lizenz gültig — voller Funktionsumfang freigeschaltet';
+        } else {
+            status.style.color = 'var(--updater-result-err-fg)';
+            status.textContent = '❌ ' + (data.message || 'Aktivierung fehlgeschlagen');
+        }
+    })
+    .catch(e => {
+        status.style.color = 'var(--updater-result-err-fg)';
+        status.textContent = '❌ ' + (e.message || 'Anfrage fehlgeschlagen');
+    });
+}
+
+function updaterClearLicense() {
+    if (!confirm('Lizenz wirklich entfernen? Alle Pro-Funktionen werden gesperrt.')) return;
+    const status = document.getElementById('proLicenseStatus');
+
+    fetch(UPDATER_LICENSE_CLEAR_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        UPDATER_PRO      = false;
+        UPDATER_LICENSED = false;
+        updaterApplyLicenseGating();
+        updaterRenderLicenseState({has_key: false, pro: false});
+        document.getElementById('proLicenseInput').value = '';
+        if (status) {
+            status.style.color = 'var(--updater-text-muted)';
+            status.textContent = 'Lizenz entfernt';
+        }
+    });
+}
+
+function updaterInitTabs() {
+    const buttons = document.querySelectorAll('.updater-tab-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            updaterSwitchTab(btn.dataset.tab, true);
+        });
+    });
+
+    // Determine initial tab from URL hash, fallback to default
+    const fromHash = (window.location.hash || '').replace(/^#tab=/, '');
+    const initial = UPDATER_VALID_TABS.includes(fromHash) ? fromHash : UPDATER_DEFAULT_TAB;
+    updaterSwitchTab(initial, false);
+
+    // React to back/forward navigation
+    window.addEventListener('hashchange', () => {
+        const tab = (window.location.hash || '').replace(/^#tab=/, '');
+        if (UPDATER_VALID_TABS.includes(tab)) {
+            updaterSwitchTab(tab, false);
+        }
+    });
+}
+
+function updaterSwitchTab(name, updateHash) {
+    if (!UPDATER_VALID_TABS.includes(name)) {
+        name = UPDATER_DEFAULT_TAB;
+    }
+
+    // Enforce per-tab license requirement client-side (server also gates).
+    if (UPDATER_PRO_TABS.includes(name) && !UPDATER_PRO) {
+        updaterOpenUpgradeModal('pro');
+        return;
+    }
+    if (UPDATER_LICENSED_TABS.includes(name) && !UPDATER_LICENSED) {
+        updaterOpenUpgradeModal('none');
+        return;
+    }
+
+    // Toggle button active state
+    document.querySelectorAll('.updater-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === name);
+    });
+
+    // Toggle panel visibility
+    document.querySelectorAll('.updater-tab-content').forEach(panel => {
+        panel.classList.toggle('active', panel.dataset.tabPanel === name);
+    });
+
+    if (updateHash) {
+        // Use replaceState so back-button stays useful across many tab clicks.
+        // History entries get noisy fast otherwise.
+        try {
+            history.replaceState(null, '', '#tab=' + name);
+        } catch (e) {
+            window.location.hash = '#tab=' + name;
+        }
+    }
+}
+
+// ── RECOVERY EMAIL SETTINGS ────────────────────────────────────────
+
+function updaterLoadRecoveryEmail() {
+    fetch(UPDATER_RUNTIME_GET_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.config) {
+            const recipientInput = document.getElementById('recoveryEmailInput');
+            const senderInput = document.getElementById('recoverySenderInput');
+            if (recipientInput) recipientInput.value = data.config.recovery_email || '';
+            if (senderInput) senderInput.value = data.config.notification_sender_email || '';
+        }
+    });
+}
+
+function updaterSaveRecoveryEmail() {
+    const recipient = (document.getElementById('recoveryEmailInput').value || '').trim();
+    const sender = (document.getElementById('recoverySenderInput').value || '').trim();
+    const status = document.getElementById('recoveryEmailStatus');
+
+    if (recipient !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+        status.style.color = 'var(--updater-danger)';
+        status.textContent = '⚠️ Ungültiges Empfänger-E-Mail-Format';
+        return;
+    }
+    if (sender !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sender)) {
+        status.style.color = 'var(--updater-danger)';
+        status.textContent = '⚠️ Ungültiges Absender-E-Mail-Format';
+        return;
+    }
+
+    // First load current config, merge with email settings, save back.
+    // We need to preserve php_binary and composer_phar — the save endpoint
+    // replaces the whole config, not just the fields we send.
+    fetch(UPDATER_RUNTIME_GET_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        const current = (data.success && data.config) ? data.config : {};
+        const merged = Object.assign({}, current, {
+            recovery_email: recipient,
+            notification_sender_email: sender,
+        });
+
+        return fetch(UPDATER_RUNTIME_SAVE_URL, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(merged),
+        }).then(r => r.json());
+    })
+    .then(data => {
+        if (data.success) {
+            status.style.color = 'var(--updater-success-fg)';
+            status.textContent = '✓ Gespeichert';
+            setTimeout(() => status.textContent = '', 3000);
+        } else {
+            status.style.color = 'var(--updater-danger)';
+            status.textContent = '❌ ' + (data.error || 'Speichern fehlgeschlagen');
+        }
+    })
+    .catch(e => {
+        status.style.color = 'var(--updater-danger)';
+        status.textContent = '❌ ' + (e.message || 'Anfrage fehlgeschlagen');
+    });
+}
+
+function updaterSendTestRecoveryEmail() {
+    const recipient = (document.getElementById('recoveryEmailInput').value || '').trim();
+    const status = document.getElementById('recoveryEmailStatus');
+
+    if (recipient === '') {
+        status.style.color = 'var(--updater-danger)';
+        status.textContent = '⚠️ Erst einen Empfänger eintragen und speichern';
+        return;
+    }
+
+    status.style.color = 'var(--updater-text-muted)';
+    status.textContent = '⏳ Wird gesendet…';
+
+    fetch(UPDATER_RUNTIME_TEST_EMAIL_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ recipient: recipient }),
+    })
+    .then(r => r.json().then(data => ({ ok: r.ok, data: data })))
+    .then(({ ok, data }) => {
+        if (ok && data.success) {
+            status.style.color = 'var(--updater-success-fg)';
+            status.textContent = '✓ Test-Mail an ' + recipient + ' gesendet';
+        } else {
+            status.style.color = 'var(--updater-danger)';
+            const err = (data.result && data.result.error) || data.error || 'Unbekannter Fehler';
+            const hint = (data.result && data.result.hint) ? '\n\nHinweis: ' + data.result.hint : '';
+            status.textContent = '❌ Fehlgeschlagen';
+            alert('Test-Mail fehlgeschlagen:\n\n' + err + hint);
+        }
+    })
+    .catch(e => {
+        status.style.color = 'var(--updater-danger)';
+        status.textContent = '❌ ' + (e.message || 'Anfrage fehlgeschlagen');
+    });
+}
+
+// Contao 5 backend navigates via Hotwire Turbo — clicking a menu entry
+// loads the new content into <turbo-frame id="contao-main"> without a full
+// page reload, so DOMContentLoaded never fires on turbo-navigated pages.
+// Bind to turbo:load and turbo:frame-load too, and guard with a flag so
+// init only runs once per page instance.
+function updaterBootPanel() {
+    if (window.__updaterBooted) return;
+    if (!document.getElementById('updaterTabs')) return; // not on our page
+    window.__updaterBooted = true;
+    updaterInitTabs();
+    updaterLoadLicenseStatus();
+    updaterLoadSchedule();
+    updaterLoadPanelConfig();
+    updaterLoadJobArchive();
+    updaterLoadRuntime();
+    updaterLoadRecoveryEmail();
+    updaterSetStandaloneUrl();
+    // Resume polling if a job is already running. If it's stale, render it
+    // immediately so the Clear button appears without waiting for polling to start.
+    fetch(UPDATER_JOB_STATUS_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.job && (data.job.status === 'queued' || data.job.status === 'running')) {
+            // Render once immediately so the user sees current state (incl. stale warning if any)
+            updaterRenderJob(data.job, data.is_stale, data.stale_reason);
+            updaterJobLogOffset = 0;
+            // Only keep polling if the job isn't already stale (no point polling a dead job)
+            if (!data.is_stale) {
+                updaterStartPolling();
+            }
+        }
+    });
+    document.getElementById('schedMiniFrequency').addEventListener('change', () => updaterToggleScheduleRows('Mini'));
+    document.getElementById('schedFullFrequency').addEventListener('change', () => updaterToggleScheduleRows('Full'));
+
+    const filesBox = document.getElementById('schedFullCompFiles');
+    const filesWarn = document.getElementById('schedFilesWarning');
+    const updateWarn = () => filesWarn.style.display = filesBox.checked ? '' : 'none';
+    filesBox.addEventListener('change', updateWarn);
+    updateWarn();
+
+    // Auto-refresh schedule state every 10 seconds while a backup is in progress
+    setInterval(function() {
+        const m = document.getElementById('schedMiniState').textContent || '';
+        const f = document.getElementById('schedFullState').textContent || '';
+        if (m.includes('Running') || m.includes('Läuft') || f.includes('Running') || f.includes('Läuft')) {
+            updaterLoadSchedule();
+        }
+    }, 10000);
+}
+
+// Fire on all three events so a first full load, a Turbo full-page visit and
+// a Turbo frame swap all boot the panel. The idempotency guard inside
+// updaterBootPanel() prevents double-init when several events fire.
+document.addEventListener('DOMContentLoaded', updaterBootPanel);
+document.addEventListener('turbo:load', updaterBootPanel);
+document.addEventListener('turbo:frame-load', updaterBootPanel);
+document.addEventListener('turbo:render', updaterBootPanel);
+
+// If the content is already in the DOM at script-execution time (Turbo swap
+// happens before script parse), boot immediately.
+if (document.readyState !== 'loading') {
+    updaterBootPanel();
+}
+
+// Reset the boot flag whenever Turbo is about to replace the frame so the next
+// visit reboots cleanly. Without this, hitting Guardian → another page → TC
+// Failsafe would fail to init because the guard is still set.
+document.addEventListener('turbo:before-frame-render', () => { window.__updaterBooted = false; });
+document.addEventListener('turbo:before-render', () => { window.__updaterBooted = false; });
+
+
+// ── Job runner ──────────────────────────────────────────────────────
+
+var updaterJobLogOffset = 0;
+var updaterJobPollTimer = null;
+
+function updaterStartRollback(failedJobId) {
+    const confirmed = confirm(
+        'Zum Pre-Update-Snapshot zurückrollen?\n\n'
+      + 'Composer-Dateien, Datenbank und (falls enthalten) das vendor/-Verzeichnis werden auf den Stand '
+      + 'vor dem fehlgeschlagenen Update zurückgesetzt.\n\n'
+      + 'Die Seite geht während des Rollbacks in den Wartungsmodus.'
+    );
+    if (!confirmed) return;
+
+    fetch(UPDATER_JOB_ROLLBACK_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ job_id: failedJobId }),
+    })
+    .then(r => r.json().then(data => ({ ok: r.ok, data: data })))
+    .then(({ ok, data }) => {
+        if (ok && data.success) {
+            alert('Rollback gestartet. Verfolge den Live-Log unten.');
+            updaterJobLogOffset = 0;
+            updaterStartPolling();
+        } else {
+            alert('Rollback fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'));
+        }
+    })
+    .catch(e => alert('Rollback-Anfrage fehlgeschlagen: ' + (e.message || e)));
+}
+
+// ── REAL UPDATE MODAL ────────────────────────────────────────────────────
+function updaterOpenUpdateModal() {
+    const modal = document.getElementById('updaterUpdateModal');
+
+    // The Contao backend wraps everything in a container that may have its own
+    // stacking-context (transforms, filters, contain). A child with
+    // `position: fixed` then sticks to THAT container instead of the viewport,
+    // causing the modal to render INLINE rather than overlaying the page.
+    // Re-parenting the modal to <body> escapes the trap.
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+
+    modal.style.display = 'flex';
+
+    // Also lock body scroll while the modal is open
+    document.body.style.overflow = 'hidden';
+
+    // Reset radios + checkbox to defaults
+    document.querySelector('input[name="updateMode"][value="full"]').checked = true;
+    document.getElementById('updaterSnapshotVendor').checked = true;
+    document.getElementById('updaterSelectivePackages').style.display = 'none';
+
+    // Bind radio change handler (idempotent — fine to re-bind)
+    document.querySelectorAll('input[name="updateMode"]').forEach(r => {
+        r.onchange = updaterOnUpdateModeChange;
+    });
+}
+
+function updaterCloseUpdateModal() {
+    document.getElementById('updaterUpdateModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function updaterOnUpdateModeChange() {
+    const mode = document.querySelector('input[name="updateMode"]:checked').value;
+    const selectiveBox = document.getElementById('updaterSelectivePackages');
+    if (mode === 'selective') {
+        selectiveBox.style.display = '';
+        updaterLoadPackagesForSelection();
+    } else {
+        selectiveBox.style.display = 'none';
+    }
+}
+
+function updaterLoadPackagesForSelection() {
+    const box = document.getElementById('updaterSelectivePackages');
+    box.innerHTML = '<div style="text-align:center;color:var(--updater-text-muted);padding:1rem;">Pakete werden geladen…</div>';
+
+    fetch(UPDATER_PACKAGES_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            box.innerHTML = '<div style="color:var(--updater-danger);padding:.5rem;">Fehler: ' + updaterEscape(data.error || 'Laden fehlgeschlagen') + '</div>';
+            return;
+        }
+
+        const withUpdates = (data.packages || []).filter(p => p.has_update);
+        if (withUpdates.length === 0) {
+            box.innerHTML = '<div style="color:var(--updater-text-muted);padding:1rem;text-align:center;">'
+                          + 'Alle Pakete sind aktuell — nichts zu aktualisieren.</div>';
+            return;
+        }
+
+        let html = '<div style="padding:.4rem;font-size:.8rem;color:var(--updater-text-muted);">'
+                 + 'Für ' + withUpdates.length + ' Paket(e) sind Updates verfügbar. Wähle aus, welche aktualisiert werden sollen:</div>'
+                 + '<div style="padding:.3rem;display:flex;gap:.4rem;">'
+                 + '<button class="updater-btn updater-btn-secondary" onclick="updaterSelectAllPkgs(true)" style="font-size:.75rem;padding:.25rem .6rem;">Alle auswählen</button>'
+                 + '<button class="updater-btn updater-btn-secondary" onclick="updaterSelectAllPkgs(false)" style="font-size:.75rem;padding:.25rem .6rem;">Auswahl aufheben</button>'
+                 + '</div>';
+
+        for (const p of withUpdates) {
+            html += '<label class="updater-pkg-row">'
+                  + '<input type="checkbox" class="updater-pkg-checkbox" value="' + updaterEscape(p.name) + '">'
+                  + '<span class="pkg-name">' + updaterEscape(p.name) + '</span>'
+                  + '<span class="pkg-version">' + updaterEscape(p.current) + '</span>'
+                  + '<span class="pkg-arrow">→</span>'
+                  + '<span class="pkg-version">' + updaterEscape(p.latest || '?') + '</span>'
+                  + '</label>';
+        }
+
+        box.innerHTML = html;
+    })
+    .catch(e => {
+        box.innerHTML = '<div style="color:var(--updater-danger);padding:.5rem;">Fehler: ' + updaterEscape(e.message || e) + '</div>';
+    });
+}
+
+function updaterSelectAllPkgs(value) {
+    document.querySelectorAll('.updater-pkg-checkbox').forEach(cb => { cb.checked = value; });
+}
+
+function updaterConfirmStartUpdate() {
+    const mode = document.querySelector('input[name="updateMode"]:checked').value;
+    const snapshotVendor = document.getElementById('updaterSnapshotVendor').checked;
+    const sendEmail = document.getElementById('updaterSendRecoveryEmail').checked;
+
+    const options = {
+        update_mode: mode,
+        snapshot_vendor: snapshotVendor,
+        send_recovery_email: sendEmail,
+    };
+
+    if (mode === 'selective') {
+        const selected = Array.from(document.querySelectorAll('.updater-pkg-checkbox:checked'))
+            .map(cb => cb.value);
+        if (selected.length === 0) {
+            alert('Bitte mindestens ein Paket zum Aktualisieren auswählen.');
+            return;
+        }
+        options.packages = selected;
+    }
+
+    const modeLabels = {
+        full:      'FULL (alle Pakete innerhalb der composer.json-Constraints)',
+        patch:     'KONSERVATIV (stabile Releases bevorzugen)',
+        selective: 'SELEKTIV (' + (options.packages ? options.packages.length : 0) + ' Paket(e))',
+    };
+
+    const snapshotNote = snapshotVendor
+        ? 'Pre-Snapshot enthält vendor/ — voller Rollback möglich.'
+        : 'Pre-Snapshot enthält nur Composer + DB — Rollback erfordert manuelles `composer install`.';
+
+    const confirmed = confirm(
+        'ECHTES Update starten?\n\n'
+      + 'Modus: ' + modeLabels[mode] + '\n'
+      + snapshotNote + '\n\n'
+      + 'Dies verändert deine Live-Seite. Sie geht während des Updates in den Wartungsmodus.'
+    );
+    if (!confirmed) return;
+
+    updaterCloseUpdateModal();
+    updaterStartJob('update', options);
+}
+
+function updaterStartJob(type, options) {
+    options = options || {};
+    const isDryRun = (type === 'dry_run');
+    // For dry-run keep the legacy confirm dialog; real-update has already
+    // confirmed via the modal.
+    if (isDryRun) {
+        const msg = 'DRY-RUN starten?\n\nDas simuliert ein Update — composer läuft mit --dry-run, contao:migrate ebenso. ' +
+                    'Ein ECHTES Backup wird trotzdem angelegt (Sicherheitsnetz). Sonst wird nichts verändert.';
+        if (!confirm(msg)) return;
+    }
+
+    fetch(UPDATER_JOB_START_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ type: type, options: options }),
+    })
+    .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data: data })))
+    .then(({ ok, status, data }) => {
+        if (ok && data.success) {
+            updaterJobLogOffset = 0;
+            updaterStartPolling();
+            return;
+        }
+
+        const reason = data.reason || '';
+
+        if (reason === 'worker_spawn_failed') {
+            // Show a specific dialog rather than a generic "failed" alert
+            alert(
+                '❌ Worker konnte nicht gestartet werden\n\n' +
+                (data.error || '') + '\n\n' +
+                'Öffne unten den Bereich „PHP-CLI-Einstellungen" und trage den korrekten Pfad zur PHP-CLI-Binary ein ' +
+                '(z. B. /opt/plesk/php/8.4/bin/php bei Plesk), dann erneut versuchen.'
+            );
+            // Reload the active job state so the failed job shows in the UI
+            updaterJobLogOffset = 0;
+            updaterStartPolling();
+            return;
+        }
+
+        if (reason === 'email_failed') {
+            // The recovery email couldn't be sent. We refuse to start the
+            // update — the user opted in to receive the email and we don't
+            // want them thinking they're protected when they're not.
+            const hint = data.hint ? '\n\nHinweis: ' + data.hint : '';
+            alert(
+                '❌ Recovery-E-Mail konnte nicht gesendet werden\n\n' +
+                (data.error || '') + hint + '\n\n' +
+                'Das Update wurde NICHT gestartet. Optionen:\n' +
+                '  • Mail-Konfiguration korrigieren (Einstellungen → Recovery-E-Mail) und erneut versuchen, oder\n' +
+                '  • Häkchen „Recovery-URLs per E-Mail senden" im Update-Dialog entfernen und ohne E-Mail fortfahren'
+            );
+            return;
+        }
+
+        if (reason === 'blocked') {
+            alert(
+                'Ein anderer Job steht im Weg:\n\n' +
+                (data.error || 'unbekannt') + '\n\n' +
+                'Nutze am aktiven Job den Button „⛔ Abbruch erzwingen" oder „🗑 Stale-Job aufräumen", um die Queue freizugeben.'
+            );
+            updaterJobLogOffset = 0;
+            updaterStartPolling();
+            return;
+        }
+
+        alert('Job konnte nicht gestartet werden: ' + (data.error || 'unbekannter Fehler'));
+    })
+    .catch(e => alert('Fehler: ' + (e.message || e)));
+}
+
+function updaterStartPolling() {
+    updaterLastSeenJob = null;
+    if (updaterJobPollTimer) clearInterval(updaterJobPollTimer);
+    updaterPollJob();
+    updaterJobPollTimer = setInterval(updaterPollJob, 2000);
+}
+
+function updaterStopPolling() {
+    if (updaterJobPollTimer) clearInterval(updaterJobPollTimer);
+    updaterJobPollTimer = null;
+}
+
+// Tracks the most recently-seen job so we can finalise the UI even after
+// the job is archived (job.json removed → /api/job returns null).
+var updaterLastSeenJob = null;
+
+function updaterPollJob() {
+    fetch(UPDATER_JOB_STATUS_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+
+        if (data.job) {
+            updaterLastSeenJob = data.job;
+            updaterRenderJob(data.job, data.is_stale, data.stale_reason);
+        } else if (updaterLastSeenJob !== null
+                   && (updaterLastSeenJob.status === 'running' || updaterLastSeenJob.status === 'queued')) {
+            // Job vanished while we were tracking it as in-progress.
+            // Synthesise a 'succeeded' final state so the UI displays all
+            // steps as done rather than leaving the last step stuck on 'running'.
+            const finalJob = {
+                ...updaterLastSeenJob,
+                status: 'succeeded',
+                current_step: null,
+                finished_at: new Date().toISOString(),
+            };
+            updaterRenderJob(finalJob, false, '');
+            updaterStopPolling();
+            updaterLoadJobArchive();
+        } else {
+            updaterRenderJob(data.job, data.is_stale, data.stale_reason);
+        }
+    });
+
+    fetch(UPDATER_JOB_LOG_URL, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ offset: updaterJobLogOffset }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+        updaterAppendLog(data.entries);
+        updaterJobLogOffset = data.offset;
+    });
+}
+
+function updaterRenderJob(job, isStale, staleReason) {
+    const wrap = document.getElementById('updaterJobActive');
+
+    if (!job) {
+        // No active job — but we may still be displaying a finished one.
+        // Stop polling once we get a "no job" response and the visible block isn't running.
+        if (wrap.querySelector('.updater-job-step.running')) return;
+        // If user has nothing on screen yet, hide the area.
+        if (wrap.innerHTML.trim() === '') wrap.style.display = 'none';
+        return;
+    }
+
+    wrap.style.display = '';
+
+    const statusBadgeClass = job.status === 'succeeded' ? 'updater-status-success'
+                           : job.status === 'failed'    ? 'updater-status-error'
+                           : job.status === 'cancelled' ? 'updater-status-error'
+                           : 'updater-status-running';
+
+    let html = '<div class="updater-job-card">'
+        + '<div class="updater-job-status">'
+        + '<span class="updater-status-badge ' + statusBadgeClass + '">' + updaterEscape(job.status) + '</span>'
+        + '<span style="color:var(--updater-text-muted);font-size:.85rem;">'
+        + 'Job <code>' + updaterEscape(job.id) + '</code> · ' + updaterEscape(job.type) + '</span>'
+        + '</div>';
+
+    // Step pipeline
+    //
+    // For failed jobs we use job.failed_step (the step that actually broke)
+    // rather than job.current_step — current_step may have advanced to a
+    // cleanup step like maintenance_off, which would mis-paint that step red
+    // and leave the actually-broken step (e.g. cache_clear) looking like it
+    // finished cleanly.
+    const failureStep = (job.status === 'failed') ? (job.failed_step || job.current_step) : job.current_step;
+
+    html += '<div class="updater-job-steps">';
+    let pastCurrent = false;
+    for (const stepName of job.steps) {
+        let cls = 'pending';
+        if (job.status === 'failed' && stepName === failureStep) {
+            cls = 'failed';
+            pastCurrent = false;
+        } else if (stepName === job.current_step && job.status !== 'failed') {
+            cls = 'running';
+            pastCurrent = false;
+        } else if (!pastCurrent && job.status !== 'queued') {
+            // Steps before currentStep are done (or all done if no currentStep)
+            if (job.current_step === null || job.steps.indexOf(stepName) < job.steps.indexOf(job.current_step)) {
+                cls = 'done';
+            } else {
+                pastCurrent = true;
+            }
+        }
+        if (job.status === 'succeeded') cls = 'done';
+
+        html += '<div class="updater-job-step ' + cls + '">' + updaterEscape(stepName) + '</div>';
+    }
+    html += '</div>';
+
+    // Error message if any
+    if (job.error) {
+        html += '<div style="background:var(--updater-result-err-bg);color:var(--updater-result-err-fg);'
+              + 'padding:.7rem 1rem;border-radius:3px;margin-top:.6rem;font-family:monospace;font-size:.8rem;">'
+              + updaterEscape(job.error) + '</div>';
+    }
+
+    // Auto-rollback button for failed real-update jobs that have a pre-snapshot.
+    // This button is specifically for "this update I just ran failed, undo it" —
+    // distinct from the general restore flow (which only lives in the Recovery
+    // panels). It's an in-context shortcut, not a general restore tool.
+    if (job.status === 'failed'
+        && job.type === 'update'
+        && job.options
+        && job.options.pre_snapshot_name) {
+        html += '<div style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);'
+              + 'padding:1rem 1.2rem;border-radius:4px;margin-top:.8rem;border:2px solid var(--updater-danger);">'
+              + '<div style="font-weight:600;font-size:1rem;margin-bottom:.4rem;">'
+              + '⚠️ Update fehlgeschlagen — Rollback verfügbar'
+              + '</div>'
+              + '<div style="font-size:.85rem;margin-bottom:.7rem;line-height:1.4;">'
+              + 'Vor den Änderungen wurde ein Pre-Update-Snapshot erstellt ('
+              + '<code>' + updaterEscape(job.options.pre_snapshot_name) + '</code>'
+              + '). Klick unten, um ihn wiederherzustellen und die Seite auf den Stand vor dem fehlgeschlagenen Update zurückzusetzen.'
+              + '</div>'
+              + '<button class="updater-btn" onclick="updaterStartRollback(\'' + updaterEscape(job.id) + '\')" '
+              + 'style="background:var(--updater-danger);font-size:.95rem;padding:.6rem 1.4rem;">'
+              + '↩️ Automatischer Rollback auf Pre-Snapshot'
+              + '</button>'
+              + '<div style="margin-top:.5rem;font-size:.75rem;color:var(--updater-text-muted);">'
+              + 'Wenn dieser Button nicht funktioniert (z. B. weil das fehlgeschlagene Update Contao selbst zerlegt hat), '
+              + 'nutze das <strong>Standalone-Recovery-Panel</strong> aus dem Recovery-Tab — es funktioniert ohne Contao oder Symfony.'
+              + '</div>'
+              + '</div>';
+    }
+
+    // Stale warning + clear button
+    if (isStale) {
+        html += '<div style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);'
+              + 'padding:.7rem 1rem;border-radius:4px;margin-top:.6rem;font-size:.85rem;">'
+              + '⚠️ <strong>Dieser Job wirkt stale.</strong> ' + updaterEscape(staleReason || '')
+              + '<div style="margin-top:.5rem;">'
+              + '<button class="updater-btn" onclick="updaterClearStaleJob(false)" '
+              + 'style="background:var(--updater-danger);font-size:.8rem;padding:.4rem .9rem;">'
+              + '🗑 Stale-Job aufräumen</button>'
+              + '</div>'
+              + '</div>';
+    } else if (job.status === 'queued' || job.status === 'running') {
+        // Allow forcing an abort even for fresh jobs the user knows are stuck
+        html += '<div style="margin-top:.6rem;font-size:.8rem;">'
+              + '<button class="updater-btn" onclick="updaterClearStaleJob(true)" '
+              + 'style="background:var(--updater-danger);font-size:.75rem;padding:.3rem .7rem;">'
+              + '⛔ Abbruch erzwingen</button>'
+              + '<span style="margin-left:.5rem;color:var(--updater-text-muted);">'
+              + '(nutzen, wenn du sicher weißt, dass der Job hängt und du nicht warten kannst)'
+              + '</span>'
+              + '</div>';
+    }
+
+    // Live log
+    html += '<h4 style="margin:1rem 0 .5rem 0;font-size:.9rem;color:var(--updater-text);">Live-Log</h4>'
+          + '<div class="updater-job-log" id="updaterJobLog"></div>';
+
+    // Stop polling when finished
+    if (job.status === 'succeeded' || job.status === 'failed' || job.status === 'cancelled') {
+        html += '<div style="margin-top:.8rem;font-size:.85rem;color:var(--updater-text-muted);">'
+              + 'Job beendet. Seite neu laden zum Zurücksetzen oder direkt einen weiteren starten.'
+              + '</div>';
+
+        // Stop polling but keep one final log read in flight
+        setTimeout(() => {
+            updaterStopPolling();
+            updaterLoadJobArchive();
+        }, 1000);
+    }
+
+    html += '</div>';
+
+    // Re-render the whole structure when:
+    //   - the job ID changed (new job started)
+    //   - the log container has been wiped (DOM was reset)
+    //   - the status transitioned between non-terminal and terminal (controls
+    //     like "Force abort" should disappear; status-specific blocks like
+    //     "Auto-rollback" should appear/disappear)
+    //
+    // Without the status-change check we'd keep the running-job controls
+    // (Force abort etc.) visible after a successful completion.
+    const existingId     = wrap.dataset.jobId;
+    const existingStatus = wrap.dataset.jobStatus || '';
+    const statusChanged  = existingStatus !== job.status;
+
+    if (existingId !== job.id || !document.getElementById('updaterJobLog') || statusChanged) {
+        // Preserve any existing log content so a status-change re-render
+        // doesn't wipe the log the user has been watching scroll by.
+        const existingLog = document.getElementById('updaterJobLog');
+        const preservedLogHtml = existingLog ? existingLog.innerHTML : '';
+
+        wrap.innerHTML = html;
+        wrap.dataset.jobId     = job.id;
+        wrap.dataset.jobStatus = job.status;
+
+        if (preservedLogHtml !== '') {
+            const newLog = document.getElementById('updaterJobLog');
+            if (newLog) {
+                newLog.innerHTML = preservedLogHtml;
+                newLog.scrollTop = newLog.scrollHeight;
+            }
+        }
+    } else {
+        // Cheap update path: same job, same status, just refresh step states
+        const badge = wrap.querySelector('.updater-status-badge');
+        if (badge) {
+            badge.className = 'updater-status-badge ' + statusBadgeClass;
+            badge.textContent = job.status;
+        }
+        // Update step states
+        const stepEls = wrap.querySelectorAll('.updater-job-step');
+        let i = 0;
+        for (const stepName of job.steps) {
+            if (stepEls[i]) {
+                let cls = 'pending';
+                if (stepName === job.current_step) {
+                    cls = job.status === 'failed' ? 'failed' : 'running';
+                } else if (job.current_step === null && job.status === 'succeeded') {
+                    cls = 'done';
+                } else if (job.current_step !== null && job.steps.indexOf(stepName) < job.steps.indexOf(job.current_step)) {
+                    cls = 'done';
+                }
+                stepEls[i].className = 'updater-job-step ' + cls;
+            }
+            i++;
+        }
+    }
+}
+
+// ── Runtime config (PHP CLI binary) ─────────────────────────────────
+
+function updaterLoadRuntime() {
+    fetch(UPDATER_RUNTIME_GET_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+
+        // License state now lives behind its own /license/status endpoint
+        // (handled by updaterLoadLicenseStatus); runtime config no longer
+        // carries the license key.
+
+        document.getElementById('runtimePhpBinary').value = data.config.php_binary || '';
+        const rf = document.getElementById('runtimeRecoveryPanelFilename');
+        if (rf) rf.value = data.config.recovery_panel_filename || '_updater-recovery.php';
+
+        // Render candidate suggestions
+        const candsDiv = document.getElementById('runtimeCandidates');
+        const cands = data.candidates || {};
+        const paths = Object.keys(cands);
+        if (paths.length === 0) {
+            candsDiv.innerHTML = '<span style="color:var(--updater-text-muted);">Keine üblichen PHP-Pfade auf diesem Server gefunden.</span>';
+            return;
+        }
+        let html = '<span style="color:var(--updater-text-muted);">Vorschläge: </span>';
+        for (const p of paths) {
+            html += '<a href="#" onclick="document.getElementById(\'runtimePhpBinary\').value=\'' + updaterEscape(p) + '\';return false;" '
+                  + 'style="color:var(--updater-text-link);text-decoration:none;margin-right:.8rem;display:inline-block;font-family:monospace;font-size:.75rem;">'
+                  + updaterEscape(p) + '</a>';
+        }
+        candsDiv.innerHTML = html;
+    });
+}
+
+function updaterTestPhpBinary() {
+    const path = document.getElementById('runtimePhpBinary').value.trim();
+    const result = document.getElementById('runtimeResult');
+    result.textContent = 'Test läuft...';
+    result.style.color = 'var(--updater-text-muted)';
+
+    fetch(UPDATER_RUNTIME_TEST_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ php_binary: path }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        const r = data.result || {};
+        if (r.ok) {
+            result.textContent = '✅ ' + r.version;
+            result.style.color = 'var(--updater-result-ok-fg)';
+        } else {
+            result.textContent = '❌ ' + (r.error || 'Test fehlgeschlagen');
+            result.style.color = 'var(--updater-result-err-fg)';
+        }
+    });
+}
+
+function updaterSaveRuntime() {
+    const path = document.getElementById('runtimePhpBinary').value.trim();
+    const result = document.getElementById('runtimeResult');
+    result.textContent = 'Speichern...';
+    result.style.color = 'var(--updater-text-muted)';
+
+    fetch(UPDATER_RUNTIME_SAVE_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ php_binary: path }),
+    })
+    .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+    .then(({ ok, data }) => {
+        if (ok && data.success) {
+            result.textContent = '✅ Gespeichert';
+            result.style.color = 'var(--updater-result-ok-fg)';
+        } else {
+            result.textContent = '❌ ' + (data.error || 'Speichern fehlgeschlagen');
+            result.style.color = 'var(--updater-result-err-fg)';
+        }
+    });
+}
+
+function updaterSaveRecoveryPanelFilename() {
+    const input  = document.getElementById('runtimeRecoveryPanelFilename');
+    const result = document.getElementById('runtimeRecoveryPanelResult');
+    const raw    = (input.value || '').trim();
+
+    if (raw !== '' && !/^[A-Za-z0-9._-]{1,60}\.php$/.test(raw)) {
+        result.textContent = '❌ Ungültiger Dateiname (nur A-Z, 0-9, ._- ; muss auf .php enden)';
+        result.style.color = 'var(--updater-result-err-fg)';
+        return;
+    }
+
+    result.textContent = 'Speichern...';
+    result.style.color = 'var(--updater-text-muted)';
+
+    fetch(UPDATER_RUNTIME_SAVE_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ recovery_panel_filename: raw }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const stored = (data.config && data.config.recovery_panel_filename) || '_updater-recovery.php';
+            input.value = stored;
+            updaterSetStandaloneUrl(stored);
+            result.textContent = '✅ Gespeichert — Panel unter ' + stored + ' (Cache leeren, damit neuer Boot deployt)';
+            result.style.color = 'var(--updater-result-ok-fg)';
+        } else {
+            result.textContent = '❌ ' + (data.error || 'Speichern fehlgeschlagen');
+            result.style.color = 'var(--updater-result-err-fg)';
+        }
+    })
+    .catch(e => {
+        result.textContent = '❌ ' + (e.message || 'Anfrage fehlgeschlagen');
+        result.style.color = 'var(--updater-result-err-fg)';
+    });
+}
+
+function updaterClearStaleJob(force) {
+    const isForce = !!force;
+    const msg = isForce
+        ? 'Diesen Job zwangsabbrechen?\n\nDer Job wurde noch nicht als stale erkannt, aber du brichst ihn trotzdem ab. '
+          + 'Nur nutzen, wenn du sicher weißt, dass der Worker wirklich hängt. Teilweise erledigte Arbeit wird NICHT zurückgenommen.'
+        : 'Stale-Job aufräumen?\n\nDas bricht den vorherigen Job ab (der offenbar gecrasht ist oder nie startete), damit du einen neuen starten kannst. '
+          + 'Es macht KEINE bereits erledigte Arbeit rückgängig — es gibt nur den Queue-Slot frei.';
+
+    if (!confirm(msg)) {
+        return;
+    }
+
+    fetch(UPDATER_JOB_CLEAR_STALE_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ force: isForce }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Hide the job area and stop polling
+            const wrap = document.getElementById('updaterJobActive');
+            wrap.innerHTML = '';
+            wrap.style.display = 'none';
+            updaterStopPolling();
+            updaterLoadJobArchive();
+        } else {
+            alert('Aufräumen fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'));
+        }
+    })
+    .catch(e => alert('Fehlgeschlagen: ' + (e.message || e)));
+}
+
+function updaterAppendLog(entries) {
+    const logEl = document.getElementById('updaterJobLog');
+    if (!logEl || entries.length === 0) return;
+
+    const fragments = [];
+    for (const entry of entries) {
+        const time = entry.ts ? entry.ts.split('T')[1].split(/[+\-Z]/)[0] : '';
+        const cls  = 'log-' + (entry.level || 'info');
+        const step = entry.step ? '[' + entry.step + ']' : '';
+        fragments.push(
+            '<span class="log-time">' + updaterEscape(time) + '</span> ' +
+            '<span class="' + cls + '">' + updaterEscape(step + ' ' + (entry.msg || '')) + '</span>'
+        );
+    }
+    logEl.innerHTML += fragments.join('\n') + '\n';
+
+    // Auto-scroll to bottom
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+function updaterLoadJobArchive() {
+    fetch(UPDATER_JOB_ARCHIVE_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        const el = document.getElementById('updaterJobArchive');
+        if (!el) return;
+
+        if (!data.success || !data.jobs || data.jobs.length === 0) {
+            el.innerHTML = '<em>Noch keine früheren Jobs.</em>';
+            return;
+        }
+
+        let html = '';
+        for (const j of data.jobs) {
+            const statusClass = j.status === 'succeeded' ? 'updater-status-success'
+                              : j.status === 'failed' ? 'updater-status-error'
+                              : 'updater-status-idle';
+            html += '<div class="updater-job-archive-row">'
+                  + '<span class="updater-status-badge ' + statusClass + '" style="font-size:.7rem;padding:.15rem .5rem;">'
+                  + updaterEscape(j.status) + '</span>'
+                  + '<code style="font-size:.75rem;">' + updaterEscape(j.id) + '</code>'
+                  + '<span style="font-size:.75rem;">' + updaterEscape(j.type) + '</span>'
+                  + '<span style="color:var(--updater-text-muted);font-size:.75rem;">'
+                  + updaterEscape(j.finished_at || j.created_at) + '</span>';
+            if (j.error) {
+                html += '<span style="color:var(--updater-result-err-fg);font-size:.75rem;flex:1;">' + updaterEscape(j.error) + '</span>';
+            }
+            html += '</div>';
+        }
+        el.innerHTML = html;
+    });
+}
+
+function updaterTestEmail() {
+    const result = document.getElementById('updaterTestEmailResult');
+    result.innerHTML = '<div style="color:var(--updater-text-muted);font-size:.8rem;">Konfiguration wird gespeichert und Mail versendet...</div>';
+
+    // Save config first so the test uses the latest settings
+    const cfg = updaterCollectScheduleConfig();
+    fetch(UPDATER_SCHED_SAVE_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify(cfg),
+    })
+    .then(r => r.json())
+    .then(saveData => {
+        if (!saveData.success) {
+            result.innerHTML = '<div class="updater-result-summary error">❌ Speichern fehlgeschlagen: ' + updaterEscape(saveData.error || 'Unbekannt') + '</div>';
+            return;
+        }
+
+        // Now send the test
+        return fetch(UPDATER_SCHED_TEST_EMAIL_URL, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        });
+    })
+    .then(r => r ? r.json() : null)
+    .then(data => {
+        if (!data) return;
+        const r = data.result || {};
+        if (data.success) {
+            result.innerHTML =
+                '<div class="updater-result-summary ok">✅ Test-Mail erfolgreich gesendet<br>'
+              + '<span style="font-size:.8rem;font-weight:normal;">Verwendeter Absender: <code>' + updaterEscape(r.sender_used || '?') + '</code></span><br>'
+              + '<span style="font-size:.8rem;font-weight:normal;">Postfach von <code>' + updaterEscape(r.recipient || '?') + '</code> prüfen</span>'
+              + '</div>';
+        } else {
+            let html = '<div class="updater-result-summary error">❌ Test-Mail fehlgeschlagen<br>'
+                     + '<span style="font-size:.8rem;font-weight:normal;font-family:monospace;">' + updaterEscape(r.error || 'Unbekannt') + '</span>';
+            if (r.hint) {
+                html += '<div style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);padding:.5rem .7rem;border-radius:3px;margin-top:.5rem;font-size:.8rem;font-weight:normal;line-height:1.5;">'
+                     + '💡 ' + updaterEscape(r.hint) + '</div>';
+            }
+            if (r.sender_attempted) {
+                html += '<div style="font-size:.75rem;font-weight:normal;margin-top:.4rem;">Versuchter Absender: <code>' + updaterEscape(r.sender_attempted) + '</code></div>';
+            }
+            html += '</div>';
+            result.innerHTML = html;
+        }
+    })
+    .catch(e => {
+        result.innerHTML = '<div class="updater-result-summary error">❌ ' + updaterEscape(e.message || e) + '</div>';
+    });
+}
+
+// ── Recovery Panel ──────────────────────────────────────────────────
+
+function updaterSetStandaloneUrl(customFilename) {
+    // Server (panel/get) is the authority on the filename; fall back to the
+    // default only if we don't have it yet.
+    const el = document.getElementById('updaterStandaloneUrl');
+    if (!el) return;
+    const filename = customFilename || '_updater-recovery.php';
+    const url = window.location.protocol + '//' + window.location.host + '/' + filename;
+    el.textContent = url;
+    el.href = url;
+}
+
+function updaterLoadPanelConfig() {
+    fetch(UPDATER_PANEL_GET_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+
+        // Token display
+        renderPanelToken(data);
+
+        // Sync the standalone URL with the admin-configured filename.
+        if (data.panel_url) {
+            try {
+                const u = new URL(data.panel_url);
+                const fn = u.pathname.replace(/^\//, '');
+                updaterSetStandaloneUrl(fn);
+            } catch (e) { /* keep default */ }
+        }
+    });
+}
+
+function renderPanelToken(data) {
+    const tokenArea = document.getElementById('updaterPanelTokenArea');
+    const sourceLabel = data.token_source === 'env'
+        ? '<span class="updater-token-source-badge updater-token-source-env">aus .env</span>'
+        : '<span class="updater-token-source-badge updater-token-source-file">auto-generiert</span>';
+
+    // SECURITY: only the masked preview is returned by /panel/get. The full
+    // token is only returned by /panel/rotate. To prevent users from being
+    // locked out, we let them rotate to obtain a fresh token (the old one is
+    // invalidated atomically).
+    const tokenPreview = data.token_preview || '****';
+
+    let html = '<div style="margin-bottom:.4rem;font-size:.85rem;">'
+             + 'Quelle: ' + sourceLabel + '</div>'
+             + '<div class="updater-token-display" id="panelTokenValue" data-masked="true">'
+             +   updaterEscape(tokenPreview)
+             + '</div>'
+             + '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">';
+
+    if (data.token_source !== 'env') {
+        html += '<button class="updater-btn updater-btn-secondary" onclick="updaterRotatePanelToken()" style="font-size:.8rem;padding:.4rem .8rem;background:var(--updater-danger);">🔄 Token rotieren, um eine neue Kopie zu erhalten</button>';
+    }
+    html += '</div>';
+
+    if (data.token_source === 'env') {
+        html += '<div style="font-size:.8rem;color:var(--updater-text-muted);margin-top:.5rem;">'
+              + 'Der Token ist in <code>.env.local</code> gesetzt. Zum Rotieren dort den Wert von <code>VTINNOVATIONS_GUARDIAN_TOKEN</code> '
+              + 'ändern und den Symfony-Cache leeren.'
+              + '</div>';
+    } else {
+        html += '<div style="font-size:.8rem;color:var(--updater-text-muted);margin-top:.5rem;">'
+              + 'Aus Sicherheitsgründen wird hier nur eine Preview des Tokens angezeigt. Um den vollständigen Token zu sehen '
+              + '(z. B. zum Bookmarken oder Speichern im Passwortmanager), klick auf <strong>Token rotieren</strong> — ein '
+              + 'frischer Token wird erzeugt und einmalig angezeigt. Der vorherige Token wird sofort ungültig.'
+              + '</div>';
+    }
+
+    tokenArea.innerHTML = html;
+}
+
+function updaterCopyPanelToken() {
+    const el = document.getElementById('panelTokenValue');
+    const token = el.textContent;
+    if (el.dataset.masked === 'true') {
+        alert('Der hier angezeigte Token ist eine maskierte Preview. Klick auf „Token rotieren", um einen frischen Token zu erzeugen und einmalig anzuzeigen.');
+        return;
+    }
+    navigator.clipboard.writeText(token).then(() => {
+        const btn = event.target;
+        const original = btn.textContent;
+        btn.textContent = '✅ Kopiert';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+}
+
+function updaterRotatePanelToken() {
+    if (!confirm('Access-Token rotieren?\n\nDer alte Token wird sofort ungültig. '
+        + 'Der neue Token wird einmalig angezeigt — jetzt kopieren und speichern. '
+        + 'Nach dem Schließen des Dialogs oder Reload ist nur noch eine maskierte Preview sichtbar.')) {
+        return;
+    }
+
+    fetch(UPDATER_PANEL_ROTATE_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.error || 'Rotation fehlgeschlagen');
+            return;
+        }
+
+        // Show the new token ONCE — replace the token area with a reveal block
+        // that has copy + dismiss buttons. After dismissal we reload the masked
+        // view so the full token isn't lingering in the DOM.
+        const tokenArea = document.getElementById('updaterPanelTokenArea');
+        const fullToken = data.token || '';
+
+        tokenArea.innerHTML =
+            '<div style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);'
+          + 'padding:.8rem 1rem;border-radius:4px;margin-bottom:.6rem;font-size:.85rem;line-height:1.4;">'
+          + '⚠️ <strong>Neuer Token erzeugt — jetzt speichern</strong><br>'
+          + 'Er wird nur dieses eine Mal angezeigt. Nach Klick auf „Ich habe ihn gespeichert" '
+          + 'oder beim Verlassen der Seite ist nur noch eine maskierte Preview verfügbar.'
+          + '</div>'
+          + '<div class="updater-token-display" id="panelTokenValueFull" '
+          + 'style="font-family:monospace;word-break:break-all;user-select:all;">'
+          +   updaterEscape(fullToken)
+          + '</div>'
+          + '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem;">'
+          + '<button class="updater-btn updater-btn-secondary" onclick="updaterCopyFreshToken()" '
+          + 'style="font-size:.85rem;padding:.45rem .9rem;">📋 Token kopieren</button>'
+          + '<button class="updater-btn" onclick="updaterLoadPanelConfig()" '
+          + 'style="font-size:.85rem;padding:.45rem .9rem;">Ich habe ihn gespeichert — ausblenden</button>'
+          + '</div>';
+    });
+}
+
+function updaterCopyFreshToken() {
+    const el = document.getElementById('panelTokenValueFull');
+    if (!el) return;
+    const token = el.textContent;
+    navigator.clipboard.writeText(token).then(() => {
+        const btn = event.target;
+        const original = btn.textContent;
+        btn.textContent = '✅ Kopiert';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+}
+
+function updaterRenderPkgRow(p) {
+    const isContao = p.name.startsWith('contao/') || p.name.includes('contao-');
+    const nameClass = isContao ? 'updater-pkg-name contao' : 'updater-pkg-name';
+
+    let updateCell = '<span style="color:var(--updater-text-very-soft);">—</span>';
+    if (p.has_update && p.latest) {
+        const semver = updaterDetectSemverChange(p.current, p.latest);
+        const blockedNote = p.is_blocked
+            ? ' <span style="color:var(--updater-tag-blocked-fg);font-size:.75rem;font-weight:normal;" title="Auf Packagist existiert eine neuere Version, die aber wegen Constraints in anderen Paketen (z. B. Symfony-Versionsanforderungen) nicht installierbar ist. Contao zu updaten braucht meist ein Update von contao/manager-bundle, das alles nachzieht.">⚠ blockiert</span>'
+            : '';
+        updateCell = '<span class="updater-pkg-arrow">→</span> '
+            + '<span class="updater-pkg-newversion semver-' + semver + '">'
+            + updaterEscape(p.latest) + '</span>'
+            + blockedNote;
+    }
+
+    let tags = '';
+    if (p.is_blocked) {
+        tags += '<span class="updater-pkg-tag updater-pkg-tag-blocked" title="Update existiert, ist aber durch Constraints anderer Pakete blockiert">blockiert</span> ';
+    } else if (p.has_update) {
+        tags += '<span class="updater-pkg-tag updater-pkg-tag-update">Update</span> ';
+    } else if (p.status === 'up-to-date') {
+        tags += '<span class="updater-pkg-tag updater-pkg-tag-uptodate">aktuell</span> ';
+    }
+    if (p.abandoned) {
+        tags += '<span class="updater-pkg-tag updater-pkg-tag-abandoned">abandoned</span> ';
+    }
+
+    const desc = p.description
+        ? '<div style="color:var(--updater-text-soft);font-size:.8rem;margin-top:.15rem;">'
+            + updaterEscape(p.description.length > 100 ? p.description.slice(0,100)+'…' : p.description)
+            + '</div>'
+        : '';
+
+    return '<tr>'
+        + '<td><div class="' + nameClass + '">' + updaterEscape(p.name) + '</div>' + desc + '</td>'
+        + '<td><span class="updater-pkg-version">' + updaterEscape(p.current) + '</span></td>'
+        + '<td>' + updateCell + '</td>'
+        + '<td>' + tags + '</td>'
+        + '</tr>';
+}
+
+function updaterDetectSemverChange(current, latest) {
+    const c = current.split('.');
+    const l = latest.split('.');
+    if (c[0] !== l[0]) return 'major';
+    if (c[1] !== l[1]) return 'minor';
+    return 'patch';
+}
+</script>
+{% endblock %}
