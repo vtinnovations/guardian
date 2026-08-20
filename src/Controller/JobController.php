@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Controller;
@@ -19,16 +21,20 @@ use Vtinnovations\Guardian\Job\UpdateJob;
 use Vtinnovations\Guardian\Job\UpdateJobManager;
 use Vtinnovations\Guardian\Notifier\RecoveryEmailNotifier;
 use Vtinnovations\Guardian\Security\BackendAuthChecker;
-use Vtinnovations\Guardian\Security\LicenseGuard;
+use Vtinnovations\Guardian\Service\RegistrationPolicy;
+use Vtinnovations\Guardian\Service\RegistrationState;
 
 class JobController
 {
+    use EntitlementResponses;
+    use GuardianTranslations;
+
     public function __construct(
         private readonly UpdateJobManager $manager,
         private readonly JobLog $log,
         private readonly BackendAuthChecker $backendAuth,
         private readonly RecoveryEmailNotifier $recoveryEmail,
-        private readonly LicenseGuard $license,
+        private readonly RegistrationPolicy $policy,
     ) {
     }
 
@@ -51,15 +57,15 @@ class JobController
     public function rollback(Request $request): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isPro()) {
-            return $this->license->deniedResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_RESTORE)) {
+            return $this->entitlementDenied(RegistrationState::CAP_RESTORE);
         }
 
         $data  = json_decode((string) $request->getContent(), true) ?? [];
         $jobId = (string) ($data['job_id'] ?? '');
 
         if ($jobId === '') {
-            return new JsonResponse(['success' => false, 'error' => 'job_id missing'], 400);
+            return new JsonResponse(['success' => false, 'error' => $this->msg('job_id_missing')], 400);
         }
 
         // Look up the failed job to find its pre-snapshot name
@@ -67,7 +73,7 @@ class JobController
         if ($archived === null) {
             return new JsonResponse([
                 'success' => false,
-                'error'   => 'Job not found in archive: ' . $jobId,
+                'error'   => $this->msg('job_not_found_in_archive', ['%id%' => $jobId]),
             ], 404);
         }
 
@@ -75,7 +81,7 @@ class JobController
         if ($snapshotName === null) {
             return new JsonResponse([
                 'success' => false,
-                'error'   => 'No pre-snapshot associated with this job. Manual restore required.',
+                'error'   => $this->msg('no_pre_snapshot'),
             ], 400);
         }
 
@@ -105,7 +111,7 @@ class JobController
             return new JsonResponse([
                 'success' => true,
                 'job'     => $job->toArray(),
-                'message' => 'Rollback started from snapshot ' . $snapshotName,
+                'message' => $this->msg('rollback_started_from', ['%snapshot%' => $snapshotName]),
             ]);
         } catch (\Vtinnovations\Guardian\Job\Exception\JobBlockedException $blocked) {
             return new JsonResponse([
@@ -135,8 +141,8 @@ class JobController
     public function start(Request $request): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isPro()) {
-            return $this->license->deniedResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_UPDATES)) {
+            return $this->entitlementDenied(RegistrationState::CAP_UPDATES);
         }
 
         $data = json_decode((string) $request->getContent(), true) ?? [];
@@ -154,7 +160,7 @@ class JobController
             $job = match ($type) {
                 UpdateJob::TYPE_DRY_RUN => UpdateJob::newDryRun(),
                 UpdateJob::TYPE_UPDATE  => UpdateJob::newUpdate($options),
-                default => throw new \InvalidArgumentException("Unknown job type: {$type}"),
+                default => throw new \InvalidArgumentException($this->msg('unknown_job_type', ['%type%' => $type])),
             };
 
             // If the user requested a pre-update recovery email, send it BEFORE
@@ -172,8 +178,9 @@ class JobController
                     return new JsonResponse([
                         'success' => false,
                         'reason'  => 'email_failed',
-                        'error'   => 'Recovery email could not be sent: ' . ($emailResult['error'] ?? 'unknown error') . '. '
-                                   . 'Disable the email checkbox or fix the mail configuration before starting the update.',
+                        'error'   => $this->msg('recovery_email_send_failed', [
+                            '%error%' => $emailResult['error'] ?? $this->msg('unknown_error'),
+                        ]),
                         'hint'    => $emailResult['hint'] ?? null,
                     ], 422);
                 }
@@ -305,7 +312,7 @@ class JobController
 
         $current = $this->manager->getCurrentJob();
         if ($current === null) {
-            return new JsonResponse(['success' => true, 'message' => 'No active job']);
+            return new JsonResponse(['success' => true, 'message' => $this->msg('no_active_job')]);
         }
 
         $isStale = $this->manager->isJobStale($current);
@@ -313,15 +320,15 @@ class JobController
         if (!$isStale && !$force) {
             return new JsonResponse([
                 'success'  => false,
-                'error'    => 'Job is not detected as stale yet. Pass force=true to abort it anyway.',
+                'error'    => $this->msg('job_not_stale_yet'),
                 'is_stale' => false,
                 'job'      => $current->toArray(),
             ], 400);
         }
 
         $reason = $force && !$isStale
-            ? 'Force-cleared from backend (user-initiated abort)'
-            : 'Cleared as stale from backend';
+            ? $this->msg('job_force_cleared')
+            : $this->msg('job_cleared_as_stale');
 
         $this->manager->markCancelled($current, $reason);
         $this->manager->archiveJob($current);

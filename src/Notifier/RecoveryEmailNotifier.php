@@ -2,15 +2,18 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Notifier;
 
+use Contao\System;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -41,9 +44,37 @@ class RecoveryEmailNotifier
         private readonly RuntimeConfig $runtimeConfig,
         private readonly PanelAuth $panelAuth,
         private readonly string $projectDir,
+        private readonly \Vtinnovations\Guardian\Service\RegistrationPolicy $policy,
         private readonly ?MailerInterface $mailer = null,
         private readonly ?RequestStack $requestStack = null,
     ) {
+    }
+
+    /**
+     * These mails carry the recovery panel URL and its access token, so they
+     * are as privileged as the panel itself and are gated the same way. The
+     * check lives here rather than only on the controllers because the
+     * pre-update mail is also triggered from the job pipeline.
+     */
+    private function entitled(): bool
+    {
+        return $this->policy->allows(\Vtinnovations\Guardian\Service\RegistrationState::CAP_NOTIFY);
+    }
+
+    /**
+     * Looks up a per-locale string from the `guardian` language file's
+     * `notifier` section. Uses `strtr()` rather than Symfony's translator
+     * parameter substitution — Contao's `contao_*` domain decorator feeds
+     * parameters through `vsprintf()`, which misparses readable `%name%`
+     * tokens as sprintf format specifiers.
+     */
+    private function msg(string $key, array $params = []): string
+    {
+        System::loadLanguageFile('guardian');
+
+        $value = $GLOBALS['TL_LANG']['notifier'][$key] ?? $key;
+
+        return [] === $params ? $value : strtr($value, $params);
     }
 
     /**
@@ -71,11 +102,14 @@ class RecoveryEmailNotifier
      */
     public function sendPreUpdateEmail(string $jobType, string $jobId, string $mode, ?string $overrideRecipient = null): array
     {
+        if (!$this->entitled()) {
+            return ['success' => false, 'error' => $this->msg('not_entitled')];
+        }
+
         if ($this->mailer === null) {
             return [
                 'success' => false,
-                'error'   => 'Symfony Mailer is not available in this installation. '
-                          . 'Configure MAILER_DSN in .env.local to enable email notifications.',
+                'error'   => $this->msg('mailer_unavailable_config'),
             ];
         }
 
@@ -86,15 +120,14 @@ class RecoveryEmailNotifier
         if ($recipient === null || $recipient === '') {
             return [
                 'success' => false,
-                'error'   => 'Recovery email address is not configured. Open Settings → Recovery email '
-                          . 'and set an address before enabling email notification on updates.',
+                'error'   => $this->msg('recipient_not_configured'),
             ];
         }
 
         if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
             return [
                 'success' => false,
-                'error'   => 'Configured recovery email is not a valid address: ' . $recipient,
+                'error'   => $this->msg('recipient_invalid', ['%recipient%' => $recipient]),
             ];
         }
 
@@ -145,10 +178,14 @@ class RecoveryEmailNotifier
      */
     public function sendTestEmail(?string $overrideRecipient = null): array
     {
+        if (!$this->entitled()) {
+            return ['success' => false, 'error' => $this->msg('not_entitled')];
+        }
+
         if ($this->mailer === null) {
             return [
                 'success' => false,
-                'error'   => 'Symfony Mailer is not available. Configure MAILER_DSN in .env.local first.',
+                'error'   => $this->msg('mailer_unavailable'),
             ];
         }
 
@@ -159,7 +196,7 @@ class RecoveryEmailNotifier
         if ($recipient === null || !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
             return [
                 'success' => false,
-                'error'   => 'No valid recovery email configured. Set one in Settings first.',
+                'error'   => $this->msg('no_valid_recipient'),
             ];
         }
 

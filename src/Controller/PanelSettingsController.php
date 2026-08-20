@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Controller;
@@ -16,6 +18,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Vtinnovations\Guardian\External\PanelAuth;
 use Vtinnovations\Guardian\Security\BackendAuthChecker;
+use Vtinnovations\Guardian\Service\RegistrationPolicy;
+use Vtinnovations\Guardian\Service\RegistrationState;
 
 /**
  * Backend-side controller for managing the standalone recovery panel's token.
@@ -34,10 +38,13 @@ use Vtinnovations\Guardian\Security\BackendAuthChecker;
  */
 class PanelSettingsController
 {
+    use EntitlementResponses;
+    use GuardianTranslations;
+
     public function __construct(
         private readonly PanelAuth $auth,
         private readonly BackendAuthChecker $backendAuth,
-        private readonly \Vtinnovations\Guardian\Security\LicenseGuard $license,
+        private readonly RegistrationPolicy $policy,
         private readonly \Vtinnovations\Guardian\Service\RuntimeConfig $runtimeConfig,
     ) {
     }
@@ -51,8 +58,8 @@ class PanelSettingsController
     public function get(Request $request): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isPro()) {
-            return $this->license->deniedResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_PANEL)) {
+            return $this->entitlementDenied(RegistrationState::CAP_PANEL);
         }
 
         $fullToken = $this->auth->getActiveToken();
@@ -92,8 +99,8 @@ class PanelSettingsController
     public function rotate(): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isPro()) {
-            return $this->license->deniedResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_PANEL)) {
+            return $this->entitlementDenied(RegistrationState::CAP_PANEL);
         }
 
         // Refuse rotation if token is in .env — that's user-managed.
@@ -101,7 +108,7 @@ class PanelSettingsController
         if ($this->auth->getTokenSource() === 'env') {
             return new JsonResponse([
                 'success' => false,
-                'error'   => 'Token comes from .env. Edit VTINNOVATIONS_GUARDIAN_TOKEN in .env.local to rotate it.',
+                'error'   => $this->msg('token_from_env'),
             ], 400);
         }
 

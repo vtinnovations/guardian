@@ -1,3 +1,8 @@
+parameters:
+    # The tier vocabulary this product accepts in a signed record. Kept in one
+    # place so the verifier and the policy can never drift apart.
+    vtinnovations_guardian.tiers: ['trial', 'free', 'pro']
+
 services:
     _defaults:
         autowire: true
@@ -10,9 +15,19 @@ services:
             - '../src/ContaoManager/'
             - '../src/DependencyInjection/'
             - '../src/Guardian.php'
+            - '../src/Controller/EntitlementResponses.php'
+            # RegistrationSummary is not a container service: Contao's DCA
+            # input_field_callback instantiates it with `new`
+            # (System::importStatic), so it self-fetches collaborators from
+            # the container inside render(). Registering it here would just
+            # produce an unused, redundant private service.
+            - '../src/BackendModule/'
 
     Vtinnovations\Guardian\Controller\:
         resource: '../src/Controller/'
+        exclude:
+            # A trait, not a service.
+            - '../src/Controller/EntitlementResponses.php'
         public: true
         tags: ['controller.service_arguments']
 
@@ -54,11 +69,39 @@ services:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
-    # v-t.one license server integration (Pro tier gate).
-    Vtinnovations\Guardian\Security\LicenseManager:
+    # ── Product registration ────────────────────────────────────────
+    # Responsibilities are spread across Checker (verification), External
+    # (endpoints, transport, replay ledger), Service (inventory, storage,
+    # policy) and Controller/EventListener (surface). Nothing here is a
+    # single switch: removing any one registration breaks the container
+    # rather than unlocking the bundle.
+
+    # public: RegistrationSummary (the DCA status/action panel) is
+    # instantiated by Contao with `new`, so it self-fetches these four
+    # collaborators from the container to render the licence section.
+    Vtinnovations\Guardian\Service\RegistrationPolicy:
+        public: true
+
+    Vtinnovations\Guardian\Checker\TrustAnchors:
+        public: true
+
+    Vtinnovations\Guardian\Service\HostInventory:
+        public: true
+
+    Vtinnovations\Guardian\Service\RegistrationStore:
+        public: true
+        arguments:
+            $projectDir:     '%kernel.project_dir%'
+            $acceptedTiers:  '%vtinnovations_guardian.tiers%'
+
+    Vtinnovations\Guardian\External\ExchangeJournal:
         arguments:
             $projectDir: '%kernel.project_dir%'
-            $verifier:   '@Vtinnovations\Guardian\Security\LicenseVerifier'
+
+    # Rendered from the tl_settings DCA, which resolves it through the
+    # container rather than receiving it by injection.
+    Vtinnovations\Guardian\EventListener\DataContainer\RegistrationPanel:
+        public: true
 
     Vtinnovations\Guardian\Restore\RestoreManager:
         arguments:

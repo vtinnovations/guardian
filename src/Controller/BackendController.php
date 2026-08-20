@@ -2,22 +2,27 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Controller;
 
 use Contao\CoreBundle\Controller\AbstractBackendController;
+use Contao\System;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Vtinnovations\Guardian\Backup\BackupManager;
 use Vtinnovations\Guardian\Security\BackendAuthChecker;
-use Vtinnovations\Guardian\Security\LicenseGuard;
+use Vtinnovations\Guardian\Service\RegistrationPolicy;
+use Vtinnovations\Guardian\Service\RegistrationState;
 use Vtinnovations\Guardian\Service\StatusManager;
 
 #[Route(
@@ -31,7 +36,8 @@ class BackendController extends AbstractBackendController
         private readonly StatusManager $statusManager,
         private readonly BackupManager $backupManager,
         private readonly BackendAuthChecker $backendAuth,
-        private readonly LicenseGuard $license,
+        private readonly RegistrationPolicy $policy,
+        private readonly UrlGeneratorInterface $router,
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
     ) {
@@ -52,9 +58,28 @@ class BackendController extends AbstractBackendController
             'current_version' => $this->getContaoVersion($installed),
             'package_count'   => \count($installed),
             'project_dir'     => $this->projectDir,
-            'is_pro'          => $this->license->isPro(),
-            'is_licensed'     => $this->license->isLicensed(),
+            'is_pro'          => $this->policy->allows(RegistrationState::CAP_UPDATES),
+            'is_licensed'     => $this->policy->allows(RegistrationState::CAP_BACKUP),
+            // Licence management lives in Contao → Settings; this module only
+            // links to it.
+            'settings_url'    => $this->router->generate('contao_backend', ['do' => 'settings']),
+            'i18n'            => $this->translations(),
         ]);
+    }
+
+    /**
+     * The same per-locale strings both the server-rendered HTML (via the
+     * `trans` filter) and the client-side JavaScript (via a JSON-encoded
+     * object) draw from, so the two can never drift out of sync with each
+     * other.
+     */
+    private function translations(): array
+    {
+        System::loadLanguageFile('guardian');
+
+        $sections = ['tabs', 'dashboard', 'backup', 'sched', 'cron', 'update', 'job', 'settings', 'recovery', 'upgrade', 'msc'];
+
+        return array_intersect_key($GLOBALS['TL_LANG'], array_flip($sections));
     }
 
     private function loadInstalledPackages(): array

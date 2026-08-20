@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Controller;
@@ -15,7 +17,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Vtinnovations\Guardian\Checker\PreUpdateChecker;
 use Vtinnovations\Guardian\Security\BackendAuthChecker;
-use Vtinnovations\Guardian\Security\LicenseGuard;
+use Vtinnovations\Guardian\Service\RegistrationPolicy;
+use Vtinnovations\Guardian\Service\RegistrationState;
 
 #[Route(
     '%contao.backend.route_prefix%/updater/analyse',
@@ -25,15 +28,17 @@ use Vtinnovations\Guardian\Security\LicenseGuard;
 )]
 class AnalysisController
 {
-    public function __construct(private readonly PreUpdateChecker $checker, private readonly BackendAuthChecker $backendAuth, private readonly LicenseGuard $license)
+    use EntitlementResponses;
+
+    public function __construct(private readonly PreUpdateChecker $checker, private readonly BackendAuthChecker $backendAuth, private readonly RegistrationPolicy $policy)
     {
     }
 
     public function __invoke(): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isPro()) {
-            return $this->license->deniedResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_UPDATES)) {
+            return $this->entitlementDenied(RegistrationState::CAP_UPDATES);
         }
 
         try {

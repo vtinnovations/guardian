@@ -18,8 +18,10 @@
  *
  * URL: https://yoursite.example/_updater-recovery.php
  *
- * @copyright V&T Innovations 2026 - 2028
- * @license   GNU/LGPL
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 declare(strict_types=1);

@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Controller;
@@ -25,6 +27,8 @@ use Vtinnovations\Guardian\Security\BackendAuthChecker;
  */
 class RuntimeConfigController
 {
+    use GuardianTranslations;
+
     public function __construct(private readonly RuntimeConfig $config, private readonly BackendAuthChecker $backendAuth)
     {
     }
@@ -58,7 +62,7 @@ class RuntimeConfigController
 
         $data = json_decode((string) $request->getContent(), true) ?? [];
         if (!\is_array($data)) {
-            return new JsonResponse(['success' => false, 'error' => 'Invalid payload'], 400);
+            return new JsonResponse(['success' => false, 'error' => $this->msg('invalid_payload')], 400);
         }
 
         // Test before saving — refuse to save a broken binary
@@ -67,7 +71,7 @@ class RuntimeConfigController
             if (!$test['ok']) {
                 return new JsonResponse([
                     'success' => false,
-                    'error'   => 'PHP binary check failed: ' . ($test['error'] ?? 'unknown'),
+                    'error'   => $this->msg('php_binary_check_failed', ['%error%' => $test['error'] ?? $this->msg('unknown_error')]),
                 ], 422);
             }
         }
@@ -81,13 +85,13 @@ class RuntimeConfigController
             if (!str_starts_with($cp, '/')) {
                 return new JsonResponse([
                     'success' => false,
-                    'error'   => 'Composer phar must be an absolute path (start with /)',
+                    'error'   => $this->msg('composer_phar_absolute'),
                 ], 422);
             }
             if (!str_ends_with($cp, '.phar') && !str_ends_with($cp, '/composer')) {
                 return new JsonResponse([
                     'success' => false,
-                    'error'   => 'Composer phar should be a .phar file',
+                    'error'   => $this->msg('composer_phar_extension'),
                 ], 422);
             }
         }

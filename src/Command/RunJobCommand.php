@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Command;
@@ -18,7 +20,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Vtinnovations\Guardian\Job\JobRunner;
+use Vtinnovations\Guardian\Job\UpdateJob;
 use Vtinnovations\Guardian\Job\UpdateJobManager;
+use Vtinnovations\Guardian\Service\RegistrationPolicy;
+use Vtinnovations\Guardian\Service\RegistrationState;
 
 /**
  * The CLI worker command.
@@ -38,6 +43,7 @@ class RunJobCommand extends Command
     public function __construct(
         private readonly UpdateJobManager $manager,
         private readonly JobRunner $runner,
+        private readonly RegistrationPolicy $policy,
     ) {
         parent::__construct();
     }
@@ -66,6 +72,19 @@ class RunJobCommand extends Command
 
         if ($job->id !== $jobId) {
             $io->error(sprintf('Job ID mismatch — active job is "%s", requested "%s"', $job->id, $jobId));
+            return Command::FAILURE;
+        }
+
+        // The worker is a second way into the same privileged operations, so it
+        // carries its own gate rather than trusting that whoever queued the job
+        // was entitled to. It can also be invoked straight from a shell.
+        $capability = UpdateJob::TYPE_RESTORE === $job->type
+            ? RegistrationState::CAP_RESTORE
+            : RegistrationState::CAP_UPDATES;
+
+        if (!$this->policy->allows($capability)) {
+            $io->error('This operation requires a valid Guardian licence. Activate one under Contao → Settings.');
+
             return Command::FAILURE;
         }
 

@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Controller;
@@ -16,14 +18,18 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Vtinnovations\Guardian\Backup\BackupManager;
 use Vtinnovations\Guardian\Security\BackendAuthChecker;
-use Vtinnovations\Guardian\Security\LicenseGuard;
+use Vtinnovations\Guardian\Service\RegistrationPolicy;
+use Vtinnovations\Guardian\Service\RegistrationState;
 
 class BackupController
 {
+    use EntitlementResponses;
+    use GuardianTranslations;
+
     public function __construct(
         private readonly BackupManager $backupManager,
         private readonly BackendAuthChecker $backendAuth,
-        private readonly LicenseGuard $license,
+        private readonly RegistrationPolicy $policy,
     ) {
     }
 
@@ -36,8 +42,8 @@ class BackupController
     public function create(Request $request): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isLicensed()) {
-            return $this->license->deniedNoLicenseResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_BACKUP)) {
+            return $this->entitlementDenied(RegistrationState::CAP_BACKUP);
         }
 
         @set_time_limit(900);
@@ -85,8 +91,8 @@ class BackupController
     public function list(): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isLicensed()) {
-            return $this->license->deniedNoLicenseResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_BACKUP)) {
+            return $this->entitlementDenied(RegistrationState::CAP_BACKUP);
         }
 
         return new JsonResponse([
@@ -104,22 +110,22 @@ class BackupController
     public function delete(Request $request): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isLicensed()) {
-            return $this->license->deniedNoLicenseResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_BACKUP)) {
+            return $this->entitlementDenied(RegistrationState::CAP_BACKUP);
         }
 
         $data = json_decode((string) $request->getContent(), true) ?? [];
         $name = (string) ($data['name'] ?? '');
 
         if ($name === '') {
-            return new JsonResponse(['success' => false, 'error' => 'Missing backup name'], 400);
+            return new JsonResponse(['success' => false, 'error' => $this->msg('backup_name_missing')], 400);
         }
 
         $deleted = $this->backupManager->deleteBackup($name);
 
         return new JsonResponse([
             'success' => $deleted,
-            'error'   => $deleted ? null : 'Backup not found or could not be deleted',
+            'error'   => $deleted ? null : $this->msg('backup_not_found'),
         ]);
     }
 }

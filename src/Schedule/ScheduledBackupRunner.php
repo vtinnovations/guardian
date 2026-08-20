@@ -2,17 +2,21 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Schedule;
 
 use Vtinnovations\Guardian\Backup\BackupManager;
 use Vtinnovations\Guardian\Notifier\BackupNotifier;
+use Vtinnovations\Guardian\Service\RegistrationPolicy;
+use Vtinnovations\Guardian\Service\RegistrationState;
 use Vtinnovations\Guardian\Service\SystemLogger;
 
 /**
@@ -43,6 +47,7 @@ class ScheduledBackupRunner
         private readonly BackupManager $backupManager,
         private readonly BackupNotifier $notifier,
         private readonly SystemLogger $sysLog,
+        private readonly RegistrationPolicy $policy,
     ) {
     }
 
@@ -85,6 +90,17 @@ class ScheduledBackupRunner
 
     private function runOne(string $type, array $cfg): array
     {
+        // Scheduled backups are a licensed capability, and cron is a way in
+        // that never passes a controller. The gate therefore sits here, at the
+        // operation itself, rather than only on the endpoints that queue it.
+        if (!$this->policy->allows(RegistrationState::CAP_SCHEDULE)) {
+            return [
+                'ran'     => false,
+                'status'  => 'skipped',
+                'message' => 'Scheduled backups require a valid licence',
+            ];
+        }
+
         if (!$this->lock->acquire()) {
             $msg = 'Could not acquire lock — another backup is already running';
             $this->state->recordRun($type, 'skipped', $msg);

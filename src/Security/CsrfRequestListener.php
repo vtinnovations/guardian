@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Security;
@@ -53,6 +55,16 @@ class CsrfRequestListener
         // Restrict to our own routes
         $routeName = (string) $request->attributes->get('_route', '');
         if (!str_starts_with($routeName, 'vtinnovations_guardian_')) {
+            return;
+        }
+
+        // Server-to-server routes carry no browser context, so there is no
+        // Origin or Referer to compare and no session to protect. They opt out
+        // here and authenticate the request cryptographically instead — see
+        // RequestAuthorizer. This is not a weaker check: a same-origin test
+        // proves the request came from a browser on our own site, while a
+        // detached signature proves it came from the vendor at all.
+        if (true === $request->attributes->get('_vt_signed_request', false)) {
             return;
         }
 

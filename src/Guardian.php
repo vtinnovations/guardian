@@ -2,16 +2,24 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Vtinnovations\Guardian\Checker\PackageSeal;
+use Vtinnovations\Guardian\Checker\TrustAnchors;
+use Vtinnovations\Guardian\Service\CanonicalForm;
+use Vtinnovations\Guardian\Service\RegistrationPolicy;
+use Vtinnovations\Guardian\Service\RegistrationState;
+use Vtinnovations\Guardian\Service\RegistrationStore;
 
 class Guardian extends Bundle
 {
@@ -88,7 +96,12 @@ class Guardian extends Bundle
             // Opt-in gate. If disabled, remove ANY previously deployed panel
             // (both the configured name and the default) so the attack surface
             // actually goes away when you turn it off.
-            if (!$this->recoveryPanelEnabled()) {
+            //
+            // The licence gate sits alongside it, and for the same reason: the
+            // panel is a licensed capability, so an installation that is not
+            // entitled to it must not have the file sitting in its webroot
+            // either. Losing the licence removes the panel on the next boot.
+            if (!$this->recoveryPanelEnabled() || !$this->panelEntitled($projectDir)) {
                 foreach (array_unique([$target, $defaultTarget]) as $stale) {
                     if (is_file($stale)) {
                         @unlink($stale);
@@ -122,6 +135,42 @@ class Guardian extends Bundle
             @copy($source, $target);
         } catch (\Throwable $ignored) {
             // Never let panel install break bundle boot
+        }
+    }
+
+    /**
+     * Whether this installation is entitled to the standalone recovery panel.
+     *
+     * Deliberately built by hand rather than pulled from the container. Boot
+     * runs before the request is dispatched and long before there is a
+     * database connection worth relying on, so this path reads the signed
+     * record straight from disk and evaluates it against the host that was
+     * bound at activation. It is also a second, independent enforcement route:
+     * disabling the controller-side gates would not put this file back in the
+     * webroot.
+     */
+    private function panelEntitled(string $projectDir): bool
+    {
+        try {
+            $store = new RegistrationStore(
+                $projectDir,
+                new PackageSeal(new TrustAnchors(), new CanonicalForm()),
+                RegistrationPolicy::ACCEPTED_TIERS,
+            );
+
+            $record = $store->current();
+            $bound  = $store->boundHost();
+
+            // Without a database here, the host bound at activation is the
+            // authority. It still has to be a member of the signed set, so a
+            // hand-edited value cannot widen anything.
+            $matched = null !== $record && '' !== $bound && $record->authorises($bound) ? $bound : null;
+
+            return RegistrationPolicy::decide($record, $matched, time())
+                ->allows(RegistrationState::CAP_PANEL);
+        } catch (\Throwable) {
+            // Fail closed: an unreadable or unverifiable state is not a licence.
+            return false;
         }
     }
 

@@ -2,14 +2,18 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Checker;
+
+use Contao\System;
 
 class PreUpdateChecker
 {
@@ -42,11 +46,11 @@ class PreUpdateChecker
         $ok       = version_compare($current, $required, '>=');
 
         return [
-            'label'   => 'PHP version',
+            'label'   => $this->msg('label_php_version'),
             'status'  => $ok ? 'ok' : 'error',
             'message' => $ok
-                ? "PHP {$current} is compatible with Contao 5"
-                : "PHP {$current} is too old — Contao 5 requires at least PHP {$required}",
+                ? $this->msg('php_version_ok', ['%current%' => $current])
+                : $this->msg('php_version_too_old', ['%current%' => $current, '%required%' => $required]),
         ];
     }
 
@@ -61,9 +65,9 @@ class PreUpdateChecker
         foreach ($candidates as $path) {
             if (file_exists($path) && is_readable($path)) {
                 return [
-                    'label'   => 'Composer',
+                    'label'   => $this->msg('label_composer'),
                     'status'  => 'ok',
-                    'message' => "Composer found: {$path}",
+                    'message' => $this->msg('composer_found', ['%path%' => $path]),
                 ];
             }
         }
@@ -71,16 +75,16 @@ class PreUpdateChecker
         $which = @shell_exec('which composer 2>/dev/null');
         if ($which !== null && trim((string) $which) !== '') {
             return [
-                'label'   => 'Composer',
+                'label'   => $this->msg('label_composer'),
                 'status'  => 'ok',
-                'message' => 'Composer found: ' . trim((string) $which),
+                'message' => $this->msg('composer_found', ['%path%' => trim((string) $which)]),
             ];
         }
 
         return [
-            'label'   => 'Composer',
+            'label'   => $this->msg('label_composer'),
             'status'  => 'warning',
-            'message' => 'Composer not found in usual paths — updates may need to be run differently',
+            'message' => $this->msg('composer_not_found'),
         ];
     }
 
@@ -100,11 +104,11 @@ class PreUpdateChecker
         }
 
         return [
-            'label'   => 'Write permissions',
+            'label'   => $this->msg('label_write_permissions'),
             'status'  => empty($issues) ? 'ok' : 'error',
             'message' => empty($issues)
-                ? 'All important directories are writable'
-                : 'No write access: ' . implode(', ', $issues),
+                ? $this->msg('permissions_ok')
+                : $this->msg('permissions_issues', ['%paths%' => implode(', ', $issues)]),
         ];
     }
 
@@ -113,9 +117,9 @@ class PreUpdateChecker
         $free = @disk_free_space($this->projectDir);
         if ($free === false) {
             return [
-                'label'   => 'Disk space',
+                'label'   => $this->msg('label_disk_space'),
                 'status'  => 'warning',
-                'message' => 'Could not determine free disk space',
+                'message' => $this->msg('disk_space_unknown'),
             ];
         }
 
@@ -124,11 +128,11 @@ class PreUpdateChecker
         $ok         = $freeMb >= $requiredMb;
 
         return [
-            'label'   => 'Disk space',
+            'label'   => $this->msg('label_disk_space'),
             'status'  => $ok ? 'ok' : 'warning',
             'message' => $ok
-                ? "{$freeMb} MB free — sufficient for backup and update"
-                : "Only {$freeMb} MB free — at least {$requiredMb} MB recommended",
+                ? $this->msg('disk_space_ok', ['%free%' => (string) $freeMb])
+                : $this->msg('disk_space_low', ['%free%' => (string) $freeMb, '%required%' => (string) $requiredMb]),
         ];
     }
 
@@ -138,18 +142,18 @@ class PreUpdateChecker
 
         if (!file_exists($installedJson)) {
             return [
-                'label'   => 'Composer packages',
+                'label'   => $this->msg('label_composer_packages'),
                 'status'  => 'warning',
-                'message' => 'vendor/composer/installed.json not found',
+                'message' => $this->msg('installed_json_missing'),
             ];
         }
 
         $data = json_decode((string) @file_get_contents($installedJson), true);
         if (!\is_array($data)) {
             return [
-                'label'   => 'Composer packages',
+                'label'   => $this->msg('label_composer_packages'),
                 'status'  => 'warning',
-                'message' => 'installed.json has unexpected format',
+                'message' => $this->msg('installed_json_unexpected'),
             ];
         }
 
@@ -169,17 +173,22 @@ class PreUpdateChecker
 
         if (!empty($abandoned)) {
             return [
-                'label'   => 'Composer packages',
+                'label'   => $this->msg('label_composer_packages'),
                 'status'  => 'warning',
-                'message' => \count($abandoned) . ' abandoned package(s): ' . implode(', ', \array_slice($abandoned, 0, 3))
-                    . (\count($abandoned) > 3 ? '…' : ''),
+                'message' => $this->msg('packages_abandoned', [
+                    '%count%' => (string) \count($abandoned),
+                    '%names%' => implode(', ', \array_slice($abandoned, 0, 3)) . (\count($abandoned) > 3 ? '…' : ''),
+                ]),
             ];
         }
 
         return [
-            'label'   => 'Composer packages',
+            'label'   => $this->msg('label_composer_packages'),
             'status'  => 'ok',
-            'message' => \count($packages) . ' packages installed (' . $contaoPkgs . ' Contao packages) — none abandoned',
+            'message' => $this->msg('packages_ok', [
+                '%total%'  => (string) \count($packages),
+                '%contao%' => (string) $contaoPkgs,
+            ]),
         ];
     }
 
@@ -194,17 +203,17 @@ class PreUpdateChecker
             $content = (string) @file_get_contents($file);
             if (preg_match('/^\s*DATABASE_URL\s*=/m', $content)) {
                 return [
-                    'label'   => 'Database configuration',
+                    'label'   => $this->msg('label_database'),
                     'status'  => 'ok',
-                    'message' => "DATABASE_URL is set in {$filename}",
+                    'message' => $this->msg('database_url_set', ['%filename%' => $filename]),
                 ];
             }
         }
 
         return [
-            'label'   => 'Database configuration',
+            'label'   => $this->msg('label_database'),
             'status'  => 'warning',
-            'message' => 'DATABASE_URL not found in .env / .env.local — backup will have to be skipped',
+            'message' => $this->msg('database_url_missing'),
         ];
     }
 
@@ -219,9 +228,9 @@ class PreUpdateChecker
 
         if (!is_dir($legacyDir)) {
             return [
-                'label'   => 'Legacy modules (system/modules/)',
+                'label'   => $this->msg('label_legacy_modules'),
                 'status'  => 'ok',
-                'message' => 'No legacy module directory found — installation is fully bundle-based',
+                'message' => $this->msg('legacy_none_found'),
             ];
         }
 
@@ -252,20 +261,21 @@ class PreUpdateChecker
 
         if (empty($modules)) {
             return [
-                'label'   => 'Legacy modules (system/modules/)',
+                'label'   => $this->msg('label_legacy_modules'),
                 'status'  => 'ok',
-                'message' => 'system/modules/ exists but is empty',
+                'message' => $this->msg('legacy_dir_empty'),
             ];
         }
 
         $names = array_map(static fn ($m) => $m['name'], $modules);
 
         return [
-            'label'   => 'Legacy modules (system/modules/)',
+            'label'   => $this->msg('label_legacy_modules'),
             'status'  => 'warning',
-            'message' => \count($modules) . ' legacy module(s) detected: ' . implode(', ', \array_slice($names, 0, 5))
-                . (\count($names) > 5 ? '…' : '')
-                . '. These use the old Contao 3 extension format and should be migrated to Composer/Symfony bundles before upgrading to a higher version.',
+            'message' => $this->msg('legacy_modules_found', [
+                '%count%' => (string) \count($modules),
+                '%names%' => implode(', ', \array_slice($names, 0, 5)) . (\count($names) > 5 ? '…' : ''),
+            ]),
             'modules' => $modules,
         ];
     }
@@ -290,9 +300,25 @@ class PreUpdateChecker
             'can_proceed' => $canProceed,
             'message'     => $canProceed
                 ? ($counts['warning'] > 0
-                    ? 'Update generally possible — please review warnings'
-                    : 'Everything ready — update can be started')
-                : 'Critical issues found — please fix first',
+                    ? $this->msg('summary_warnings')
+                    : $this->msg('summary_ready'))
+                : $this->msg('summary_critical'),
         ];
+    }
+
+    /**
+     * Looks up a per-locale string from the `guardian` language file's
+     * `checker` section. Uses `strtr()` rather than Symfony's translator
+     * parameter substitution — Contao's `contao_*` domain decorator feeds
+     * parameters through `vsprintf()`, which misparses readable `%name%`
+     * tokens as sprintf format specifiers.
+     */
+    private function msg(string $key, array $params = []): string
+    {
+        System::loadLanguageFile('guardian');
+
+        $value = $GLOBALS['TL_LANG']['checker'][$key] ?? $key;
+
+        return [] === $params ? $value : strtr($value, $params);
     }
 }

@@ -1,12 +1,15 @@
 {#
-  @package   [updater]
-  @author    V&T Innovations Team
-  @license   GNU/LGPL
-  @copyright V&T Innovations 2026 - 2028
+  Guardian
+
+  Package: vtinnovations/guardian
+  Copyright: V&T Innovations Team
+  Licence: LGPL-3.0-or-later
+  Website: https://www.v-t.one
 #}
 {% extends "@Contao/be_main" %}
 
 {% block main_content %}
+{% set t = 'contao_guardian' %}
 <style>
 /* ───────────────────────────────────────────────────────────────────
    Guardian — backend styles
@@ -432,11 +435,11 @@ html[data-color-scheme="dark"] {
 
     {# ── Tab navigation ──────────────────────────────────────────── #}
     <div class="updater-tabs" id="updaterTabs">
-        <button class="updater-tab-btn" data-tab="dashboard">📊 Dashboard</button>
-        <button class="updater-tab-btn" data-tab="update">🔄 Update</button>
-        <button class="updater-tab-btn" data-tab="backup">💾 Backup</button>
-        <button class="updater-tab-btn" data-tab="recovery">🛟 Recovery</button>
-        <button class="updater-tab-btn" data-tab="settings">⚙️ Einstellungen</button>
+        <button class="updater-tab-btn" data-tab="dashboard">{{ 'tabs.dashboard'|trans({}, 'contao_guardian') }}</button>
+        <button class="updater-tab-btn" data-tab="update">{{ 'tabs.update'|trans({}, 'contao_guardian') }}</button>
+        <button class="updater-tab-btn" data-tab="backup">{{ 'tabs.backup'|trans({}, 'contao_guardian') }}</button>
+        <button class="updater-tab-btn" data-tab="recovery">{{ 'tabs.recovery'|trans({}, 'contao_guardian') }}</button>
+        <button class="updater-tab-btn" data-tab="settings">{{ 'tabs.settings'|trans({}, 'contao_guardian') }}</button>
     </div>
 
     {# ── TAB: Dashboard ──────────────────────────────────────────── #}
@@ -447,36 +450,36 @@ html[data-color-scheme="dark"] {
         <div class="updater-plan-card">
             <div>
                 <div id="updaterPlanBadge" class="updater-plan-badge {% if is_pro %}pro{% elseif is_licensed %}free{% else %}none{% endif %}">
-                    {% if is_pro %}⭐ Pro-Paket aktiv
-                    {% elseif is_licensed %}🆓 Free-Paket aktiv
-                    {% else %}🚫 Keine Lizenz
+                    {% if is_pro %}{{ 'dashboard.plan_badge_pro'|trans({}, t) }}
+                    {% elseif is_licensed %}{{ 'dashboard.plan_badge_free'|trans({}, t) }}
+                    {% else %}{{ 'dashboard.plan_badge_none'|trans({}, t) }}
                     {% endif %}
                 </div>
                 <p style="margin:.6rem 0 0;font-size:.85rem;color:var(--updater-text-muted);max-width:520px;line-height:1.5;">
                     <span id="updaterPlanTagline">
                         {% if is_pro %}
-                            Voller Funktionsumfang freigeschaltet — Updates, Restore/Recovery, geplante Backups und das Standalone-Recovery-Panel.
+                            {{ 'dashboard.plan_tagline_pro'|trans({}, t) }}
                         {% elseif is_licensed %}
-                            Free-Paket: <strong>Manuelles Backup</strong> verfügbar. Für Updates, Restore/Recovery, geplante Backups und Standalone-Recovery-Panel braucht es eine Pro-Lizenz.
+                            {{ 'dashboard.plan_tagline_free'|trans({}, t)|raw }}
                         {% else %}
-                            Ohne Lizenz sind alle Funktionen gesperrt. Trage einen Lizenzschlüssel unter <strong>Einstellungen → Pro-Lizenz</strong> ein. Free-Lizenzen schalten das Manuelle Backup frei, Pro-Lizenzen den vollen Funktionsumfang.
+                            {{ 'dashboard.plan_tagline_none'|trans({}, t)|raw }}
                         {% endif %}
                     </span>
                 </p>
             </div>
             <div style="flex:1;min-width:220px;">
                 <ul id="updaterPlanFeatures" class="updater-plan-features">
-                    <li class="{% if is_licensed %}on{% else %}off{% endif %}">{% if is_licensed %}✓{% else %}🔒{% endif %} Manuelles Backup</li>
-                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} Update-Jobs (Composer)</li>
-                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} Restore / Recovery</li>
-                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} Geplante Backups (Mini + Full)</li>
-                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} Standalone-Recovery-Panel</li>
+                    <li class="{% if is_licensed %}on{% else %}off{% endif %}">{% if is_licensed %}✓{% else %}🔒{% endif %} {{ 'dashboard.feature_backup'|trans({}, t) }}</li>
+                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} {{ 'dashboard.feature_updates'|trans({}, t) }}</li>
+                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} {{ 'dashboard.feature_restore'|trans({}, t) }}</li>
+                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} {{ 'dashboard.feature_schedule'|trans({}, t) }}</li>
+                    <li class="{% if is_pro %}on{% else %}off{% endif %}">{% if is_pro %}✓{% else %}🔒{% endif %} {{ 'dashboard.feature_panel'|trans({}, t) }}</li>
                 </ul>
                 {% if not is_pro %}
                 <div style="margin-top:.6rem;">
-                    <button class="updater-btn" onclick="updaterSwitchTab('settings', true)" style="font-size:.82rem;padding:.4rem .9rem;">
-                        {% if is_licensed %}⭐ Auf Pro upgraden{% else %}🔑 Lizenz eintragen{% endif %}
-                    </button>
+                    <a class="updater-btn" href="{{ settings_url }}" style="font-size:.82rem;padding:.4rem .9rem;display:inline-block;text-decoration:none;">
+                        {% if is_licensed %}{{ 'dashboard.upgrade_to_pro'|trans({}, t) }}{% else %}{{ 'dashboard.enter_license'|trans({}, t) }}{% endif %}
+                    </a>
                 </div>
                 {% endif %}
             </div>
@@ -486,32 +489,32 @@ html[data-color-scheme="dark"] {
     {# ── Stats grid ──────────────────────────────────────────────── #}
     <div class="updater-grid">
         <div class="updater-stat">
-            <div class="label">Aktuelle Contao-Version</div>
+            <div class="label">{{ 'dashboard.stat_current_version'|trans({}, t) }}</div>
             <div class="value">{{ current_version }}</div>
         </div>
         <div class="updater-stat">
-            <div class="label">Installierte Pakete</div>
+            <div class="label">{{ 'dashboard.stat_installed_packages'|trans({}, t) }}</div>
             <div class="value">{{ package_count }}</div>
         </div>
         <div class="updater-stat">
-            <div class="label">Verfügbare Backups</div>
+            <div class="label">{{ 'dashboard.stat_available_backups'|trans({}, t) }}</div>
             <div class="value">{{ backups|length }}</div>
         </div>
     </div>
 
     {# ── Status card ─────────────────────────────────────────────── #}
     <div class="updater-card">
-        <h3>Aktueller Status</h3>
+        <h3>{{ 'dashboard.status_title'|trans({}, t) }}</h3>
         {% set state = status.state|default('idle') %}
         {% set badge_class = state == 'idle' ? 'idle'
             : (state == 'success' ? 'success'
             : (state == 'error' ? 'error' : 'running')) %}
 
         {% set state_label = {
-            'idle':    '✓ Idle — keine Operation läuft',
-            'running': '⏳ Läuft — Operation in Bearbeitung',
-            'success': '✓ Letzte Operation erfolgreich',
-            'error':   '⚠️ Letzte Operation fehlgeschlagen',
+            'idle':    'dashboard.status_idle'|trans({}, t),
+            'running': 'dashboard.status_running'|trans({}, t),
+            'success': 'dashboard.status_success'|trans({}, t),
+            'error':   'dashboard.status_error'|trans({}, t),
         } %}
 
         <span class="updater-status-badge updater-status-{{ badge_class }}">
@@ -520,7 +523,7 @@ html[data-color-scheme="dark"] {
 
         {% if state == 'idle' and not status.message %}
             <div style="font-size:.85rem;color:var(--updater-text-muted);margin-top:.5rem;">
-                Aktuell läuft keine Operation. Die nächste Aktion (Update, Backup oder Restore), die du startest, erscheint hier.
+                {{ 'dashboard.status_idle_hint'|trans({}, t) }}
             </div>
         {% endif %}
 
@@ -530,7 +533,7 @@ html[data-color-scheme="dark"] {
 
         {% if status.updated_at %}
             <div style="font-size:.85rem;color:var(--updater-text-soft);margin-top:.5rem;">
-                Letzte Aktualisierung: {{ status.updated_at }}
+                {{ ('dashboard.status_updated_at'|trans({}, t))|replace({'%date%': status.updated_at}) }}
             </div>
         {% endif %}
 
@@ -543,39 +546,34 @@ html[data-color-scheme="dark"] {
 
     {# ── Pre-Update Analysis ─────────────────────────────────────── #}
     <div class="updater-card">
-        <h3>Vorabprüfung (Pre-Update-Analyse)</h3>
+        <h3>{{ 'dashboard.analysis_title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
-            Prüft die Voraussetzungen für ein Update — vollständig nur lesend, verändert nichts.
+            {{ 'dashboard.analysis_desc'|trans({}, t) }}
         </p>
         <button class="updater-btn" id="updaterAnalyseBtn" onclick="updaterRunAnalysis()">
-            🔍 Analyse starten
+            {{ 'dashboard.analysis_start'|trans({}, t) }}
         </button>
         <div id="updaterAnalysisResult" style="margin-top:1rem;"></div>
     </div>
 
     {# ── Package overview ────────────────────────────────────────── #}
     <div class="updater-card">
-        <h3>Installierte Pakete &amp; verfügbare Updates</h3>
+        <h3>{{ 'dashboard.packages_title'|trans({}, t)|raw }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
-            Zeigt alle installierten Composer-Pakete. Klicke auf „Updates prüfen", um Packagist direkt nach
-            den neuesten stabilen Versionen jedes Pakets abzufragen — unabhängig von den aktuellen composer.json-Constraints.
-            <br><strong>Hinweis:</strong> „Update verfügbar" bedeutet nur, dass auf Packagist eine neuere Version existiert.
-            Ob sie tatsächlich installiert werden kann, hängt von Dependency-Constraints ab und erfordert unter Umständen,
-            mehrere Pakete gemeinsam zu aktualisieren (z. B. bei einem Contao-Major-Upgrade).
-            Die Ergebnisse werden 24 Stunden gecacht.
+            {{ 'dashboard.packages_desc'|trans({}, t)|raw }}
         </p>
 
         <div class="updater-pkg-controls">
             <button class="updater-btn" id="updaterPkgLoadBtn" onclick="updaterLoadPackages(false)">
-                📦 Pakete laden
+                {{ 'dashboard.packages_load'|trans({}, t) }}
             </button>
             <button class="updater-btn updater-btn-secondary" id="updaterPkgRefreshBtn" onclick="updaterLoadPackages(true)" style="display:none;">
-                🔄 Updates prüfen
+                {{ 'dashboard.packages_refresh'|trans({}, t) }}
             </button>
-            <input type="text" class="updater-pkg-filter" id="updaterPkgFilter" placeholder="Nach Name filtern..." oninput="updaterApplyFilter()" style="display:none;">
+            <input type="text" class="updater-pkg-filter" id="updaterPkgFilter" placeholder="{{ 'dashboard.packages_filter_placeholder'|trans({}, t) }}" oninput="updaterApplyFilter()" style="display:none;">
             <label class="updater-pkg-checkbox" id="updaterPkgOnlyUpdatesLabel" style="display:none;">
                 <input type="checkbox" id="updaterPkgOnlyUpdates" onchange="updaterApplyFilter()">
-                Nur Pakete mit Updates anzeigen
+                {{ 'dashboard.packages_only_updates'|trans({}, t) }}
             </label>
         </div>
 
@@ -589,54 +587,52 @@ html[data-color-scheme="dark"] {
 
     {# ── Backup management ───────────────────────────────────────── #}
     <div class="updater-card">
-        <h3>Backups</h3>
+        <h3>{{ 'backup.title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
-            Ein vollständiges Backup enthält <code>composer.json</code>, <code>composer.lock</code>, die Datenbank (gzip-komprimiert)
-            sowie die Verzeichnisse <code>vendor/</code> und <code>templates/</code>. Backups liegen unter
-            <code>var/updater/backup/&lt;timestamp&gt;</code> und werden nie überschrieben.
+            {{ 'backup.desc'|trans({}, t)|raw }}
         </p>
         <fieldset class="updater-backup-options">
-            <legend>Backup-Inhalte</legend>
+            <legend>{{ 'backup.components_legend'|trans({}, t) }}</legend>
             <label>
                 <input type="checkbox" checked disabled>
                 <div>
-                    <strong>composer.json + composer.lock + Datenbank</strong>
-                    <div class="desc">Immer enthalten — klein (wenige MB).</div>
+                    <strong>{{ 'backup.comp_core_title'|trans({}, t) }}</strong>
+                    <div class="desc">{{ 'backup.comp_core_desc'|trans({}, t) }}</div>
                 </div>
             </label>
             <label>
                 <input type="checkbox" id="updaterBkpVendor" checked>
                 <div>
-                    <strong>vendor/</strong>-Verzeichnis
-                    <div class="desc">Composer-Abhängigkeiten. Empfohlen. Typischerweise 100–500 MB.</div>
+                    {{ 'backup.comp_vendor_title'|trans({}, t)|raw }}
+                    <div class="desc">{{ 'backup.comp_vendor_desc'|trans({}, t) }}</div>
                 </div>
             </label>
             <label>
                 <input type="checkbox" id="updaterBkpTemplates" checked>
                 <div>
-                    <strong>templates/</strong> + <strong>contao/templates/</strong>
-                    <div class="desc">Eigene Twig- und HTML5-Templates. Klein.</div>
+                    {{ 'backup.comp_templates_title'|trans({}, t)|raw }}
+                    <div class="desc">{{ 'backup.comp_templates_desc'|trans({}, t) }}</div>
                 </div>
             </label>
             <label>
                 <input type="checkbox" id="updaterBkpFiles">
                 <div>
-                    <strong>files/</strong>-Verzeichnis
-                    <span style="color:var(--updater-tag-abandoned-fg);font-size:.75rem;">(kann sehr groß sein!)</span>
-                    <div class="desc">Uploads der Nutzer — Bilder, PDFs, Videos. Oft mehrere GB. Ohne dieses Verzeichnis kann ein Rollback zu inkonsistenten DB-Referenzen und fehlenden Mediendateien führen.</div>
+                    {{ 'backup.comp_files_title'|trans({}, t)|raw }}
+                    <span style="color:var(--updater-tag-abandoned-fg);font-size:.75rem;">{{ 'backup.comp_files_warning'|trans({}, t) }}</span>
+                    <div class="desc">{{ 'backup.comp_files_desc'|trans({}, t) }}</div>
                 </div>
             </label>
             <label>
                 <input type="checkbox" id="updaterBkpAssets">
                 <div>
-                    <strong>assets/</strong>-Verzeichnis
-                    <div class="desc">Generierte Bilder, Webfonts und JS/CSS-Asset-Cache. Meist wieder aufbaubar.</div>
+                    {{ 'backup.comp_assets_title'|trans({}, t)|raw }}
+                    <div class="desc">{{ 'backup.comp_assets_desc'|trans({}, t) }}</div>
                 </div>
             </label>
         </fieldset>
 
         <button class="updater-btn" id="updaterBackupBtn" onclick="updaterCreateBackup()">
-            💾 Backup jetzt erstellen
+            {{ 'backup.create_now'|trans({}, t) }}
         </button>
         <div id="updaterBackupResult" style="margin-top:1rem;"></div>
 
@@ -652,12 +648,12 @@ html[data-color-scheme="dark"] {
                         </div>
                         <span style="color:var(--updater-text-soft);font-size:.85rem;">{{ backup.created_at }}</span>
                         <span style="color:var(--updater-text-very-soft);font-size:.8rem;">{{ backup.path }}</span>
-                        <button class="updater-btn updater-btn-delete" onclick="updaterDeleteBackup('{{ backup.name }}')">Löschen</button>
+                        <button class="updater-btn updater-btn-delete" onclick="updaterDeleteBackup('{{ backup.name }}')">{{ 'backup.delete'|trans({}, t) }}</button>
                     </div>
                 {% endfor %}
             {% else %}
                 <div class="updater-empty">
-                    Noch keine Backups. Nutze „Backup jetzt erstellen" oder warte, bis vor dem nächsten Update automatisch eines angelegt wird.
+                    {{ 'backup.empty'|trans({}, t) }}
                 </div>
             {% endif %}
         </div>
@@ -665,320 +661,239 @@ html[data-color-scheme="dark"] {
 
     {# ── Scheduled backups ───────────────────────────────────────── #}
     <div class="updater-card" id="updaterScheduledCard">
-        <h3>Geplante Backups</h3>
+        <h3>{{ 'sched.title'|trans({}, t) }}</h3>
         <div id="updaterScheduledLockNotice" style="display:none;background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);padding:.7rem .9rem;border-radius:4px;font-size:.85rem;line-height:1.5;margin-bottom:.8rem;">
-            🔒 Das System für geplante Backups benötigt eine gültige <strong>Pro-Lizenz</strong>.
-            Trage deinen Code unter <strong>Einstellungen → Pro-Lizenz</strong> ein, um es freizuschalten.
-            Manuelle Backups oben bleiben verfügbar.
+            {{ 'sched.lock_notice'|trans({}, t)|raw }}
         </div>
         <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
-            Führt Backups automatisch über Contaos Cron-System aus. Konfiguriere zwei unabhängige Zeitpläne:
-            <strong>Mini</strong>-Backups (nur Datenbank + Composer-Dateien — schnell und klein) und
-            <strong>Full</strong>-Backups (Datenbank + ausgewählte Verzeichnisse — größer und langsamer).
-            Alte Backups werden automatisch gelöscht, sobald das Retention-Limit erreicht ist.
+            {{ 'sched.desc'|trans({}, t)|raw }}
         </p>
 
         <div class="updater-sched-grid">
             <!-- MINI -->
             <div class="updater-sched-block">
-                <h4>🗄️ Mini-Backup (nur DB)</h4>
-                <div class="updater-sched-desc">Nur die Datenbank und Composer-Dateien. Schnell (wenige Sekunden).</div>
+                <h4>{{ 'sched.mini_title'|trans({}, t) }}</h4>
+                <div class="updater-sched-desc">{{ 'sched.mini_desc'|trans({}, t) }}</div>
 
                 <div class="updater-sched-toggle">
                     <input type="checkbox" id="schedMiniEnabled">
-                    <label for="schedMiniEnabled">Geplante Mini-Backups aktivieren</label>
+                    <label for="schedMiniEnabled">{{ 'sched.mini_enable'|trans({}, t) }}</label>
                 </div>
 
                 <div class="updater-sched-row">
-                    <label>Häufigkeit</label>
+                    <label>{{ 'sched.frequency'|trans({}, t) }}</label>
                     <select id="schedMiniFrequency">
-                        <optgroup label="🧪 Testen (intervallbasiert)">
-                            <option value="5min">Alle 5 Minuten</option>
-                            <option value="15min">Alle 15 Minuten</option>
-                            <option value="hourly">Stündlich</option>
+                        <optgroup label="{{ 'sched.optgroup_test'|trans({}, t) }}">
+                            <option value="5min">{{ 'sched.freq_5min'|trans({}, t) }}</option>
+                            <option value="15min">{{ 'sched.freq_15min'|trans({}, t) }}</option>
+                            <option value="hourly">{{ 'sched.freq_hourly'|trans({}, t) }}</option>
                         </optgroup>
-                        <optgroup label="Produktion">
-                            <option value="daily">Täglich</option>
-                            <option value="weekly">Wöchentlich</option>
-                            <option value="monthly">Monatlich</option>
+                        <optgroup label="{{ 'sched.optgroup_prod'|trans({}, t) }}">
+                            <option value="daily">{{ 'sched.freq_daily'|trans({}, t) }}</option>
+                            <option value="weekly">{{ 'sched.freq_weekly'|trans({}, t) }}</option>
+                            <option value="monthly">{{ 'sched.freq_monthly'|trans({}, t) }}</option>
                         </optgroup>
                     </select>
                 </div>
                 <div class="updater-sched-row">
-                    <label>Uhrzeit</label>
+                    <label>{{ 'sched.time'|trans({}, t) }}</label>
                     <input type="time" id="schedMiniTime">
                 </div>
                 <div class="updater-sched-row" id="schedMiniWeekdayRow" style="display:none;">
-                    <label>Wochentag</label>
+                    <label>{{ 'sched.weekday'|trans({}, t) }}</label>
                     <select id="schedMiniWeekday">
-                        <option value="0">Sonntag</option>
-                        <option value="1">Montag</option>
-                        <option value="2">Dienstag</option>
-                        <option value="3">Mittwoch</option>
-                        <option value="4">Donnerstag</option>
-                        <option value="5">Freitag</option>
-                        <option value="6">Samstag</option>
+                        <option value="0">{{ 'sched.weekday_0'|trans({}, t) }}</option>
+                        <option value="1">{{ 'sched.weekday_1'|trans({}, t) }}</option>
+                        <option value="2">{{ 'sched.weekday_2'|trans({}, t) }}</option>
+                        <option value="3">{{ 'sched.weekday_3'|trans({}, t) }}</option>
+                        <option value="4">{{ 'sched.weekday_4'|trans({}, t) }}</option>
+                        <option value="5">{{ 'sched.weekday_5'|trans({}, t) }}</option>
+                        <option value="6">{{ 'sched.weekday_6'|trans({}, t) }}</option>
                     </select>
                 </div>
                 <div class="updater-sched-row" id="schedMiniDomRow" style="display:none;">
-                    <label>Tag im Monat</label>
+                    <label>{{ 'sched.day_of_month'|trans({}, t) }}</label>
                     <input type="number" id="schedMiniDom" min="1" max="28">
                 </div>
                 <div class="updater-sched-row">
-                    <label>Behalte letzte</label>
+                    <label>{{ 'sched.retention'|trans({}, t) }}</label>
                     <input type="number" id="schedMiniRetention" min="1" max="999">
-                    <span style="color:var(--updater-text-muted);font-size:.8rem;">Backups</span>
+                    <span style="color:var(--updater-text-muted);font-size:.8rem;">{{ 'sched.retention_unit'|trans({}, t) }}</span>
                 </div>
 
                 <div id="schedMiniState" style="margin-top:.8rem;"></div>
                 <div class="updater-sched-actions">
-                    <button class="updater-btn updater-btn-secondary" onclick="updaterRunSchedule('mini')" style="font-size:.8rem;padding:.4rem .8rem;">▶ Mini jetzt ausführen</button>
+                    <button class="updater-btn updater-btn-secondary" onclick="updaterRunSchedule('mini')" style="font-size:.8rem;padding:.4rem .8rem;">{{ 'sched.run_mini_now'|trans({}, t) }}</button>
                 </div>
             </div>
 
             <!-- FULL -->
             <div class="updater-sched-block">
-                <h4>📦 Full-Backup</h4>
-                <div class="updater-sched-desc">Datenbank + ausgewählte Verzeichnisse. Langsamer (Minuten bis zehn Minuten).</div>
+                <h4>{{ 'sched.full_title'|trans({}, t) }}</h4>
+                <div class="updater-sched-desc">{{ 'sched.full_desc'|trans({}, t) }}</div>
 
                 <div class="updater-sched-toggle">
                     <input type="checkbox" id="schedFullEnabled">
-                    <label for="schedFullEnabled">Geplante Full-Backups aktivieren</label>
+                    <label for="schedFullEnabled">{{ 'sched.full_enable'|trans({}, t) }}</label>
                 </div>
 
                 <div class="updater-sched-row">
-                    <label>Häufigkeit</label>
+                    <label>{{ 'sched.frequency'|trans({}, t) }}</label>
                     <select id="schedFullFrequency">
-                        <optgroup label="🧪 Testen (intervallbasiert)">
-                            <option value="5min">Alle 5 Minuten</option>
-                            <option value="15min">Alle 15 Minuten</option>
-                            <option value="hourly">Stündlich</option>
+                        <optgroup label="{{ 'sched.optgroup_test'|trans({}, t) }}">
+                            <option value="5min">{{ 'sched.freq_5min'|trans({}, t) }}</option>
+                            <option value="15min">{{ 'sched.freq_15min'|trans({}, t) }}</option>
+                            <option value="hourly">{{ 'sched.freq_hourly'|trans({}, t) }}</option>
                         </optgroup>
-                        <optgroup label="Produktion">
-                            <option value="daily">Täglich</option>
-                            <option value="weekly">Wöchentlich</option>
-                            <option value="monthly">Monatlich</option>
+                        <optgroup label="{{ 'sched.optgroup_prod'|trans({}, t) }}">
+                            <option value="daily">{{ 'sched.freq_daily'|trans({}, t) }}</option>
+                            <option value="weekly">{{ 'sched.freq_weekly'|trans({}, t) }}</option>
+                            <option value="monthly">{{ 'sched.freq_monthly'|trans({}, t) }}</option>
                         </optgroup>
                     </select>
                 </div>
                 <div class="updater-sched-row">
-                    <label>Uhrzeit</label>
+                    <label>{{ 'sched.time'|trans({}, t) }}</label>
                     <input type="time" id="schedFullTime">
                 </div>
                 <div class="updater-sched-row" id="schedFullWeekdayRow" style="display:none;">
-                    <label>Wochentag</label>
+                    <label>{{ 'sched.weekday'|trans({}, t) }}</label>
                     <select id="schedFullWeekday">
-                        <option value="0">Sonntag</option>
-                        <option value="1">Montag</option>
-                        <option value="2">Dienstag</option>
-                        <option value="3">Mittwoch</option>
-                        <option value="4">Donnerstag</option>
-                        <option value="5">Freitag</option>
-                        <option value="6">Samstag</option>
+                        <option value="0">{{ 'sched.weekday_0'|trans({}, t) }}</option>
+                        <option value="1">{{ 'sched.weekday_1'|trans({}, t) }}</option>
+                        <option value="2">{{ 'sched.weekday_2'|trans({}, t) }}</option>
+                        <option value="3">{{ 'sched.weekday_3'|trans({}, t) }}</option>
+                        <option value="4">{{ 'sched.weekday_4'|trans({}, t) }}</option>
+                        <option value="5">{{ 'sched.weekday_5'|trans({}, t) }}</option>
+                        <option value="6">{{ 'sched.weekday_6'|trans({}, t) }}</option>
                     </select>
                 </div>
                 <div class="updater-sched-row" id="schedFullDomRow" style="display:none;">
-                    <label>Tag im Monat</label>
+                    <label>{{ 'sched.day_of_month'|trans({}, t) }}</label>
                     <input type="number" id="schedFullDom" min="1" max="28">
                 </div>
                 <div class="updater-sched-row">
-                    <label>Behalte letzte</label>
+                    <label>{{ 'sched.retention'|trans({}, t) }}</label>
                     <input type="number" id="schedFullRetention" min="1" max="999">
-                    <span style="color:var(--updater-text-muted);font-size:.8rem;">Backups</span>
+                    <span style="color:var(--updater-text-muted);font-size:.8rem;">{{ 'sched.retention_unit'|trans({}, t) }}</span>
                 </div>
 
                 <div class="updater-sched-components">
-                    <strong style="font-size:.8rem;color:var(--updater-text);">In Full-Backup einschließen:</strong>
-                    <label><input type="checkbox" id="schedFullCompVendor"> vendor/</label>
-                    <label><input type="checkbox" id="schedFullCompTemplates"> templates/ + contao/templates/</label>
-                    <label><input type="checkbox" id="schedFullCompFiles"> files/
-                        <span style="color:var(--updater-tag-abandoned-fg);font-size:.7rem;">(kann riesig sein — riskant bei Web-Cron!)</span>
+                    <strong style="font-size:.8rem;color:var(--updater-text);">{{ 'sched.full_components_legend'|trans({}, t) }}</strong>
+                    <label><input type="checkbox" id="schedFullCompVendor"> {{ 'sched.full_comp_vendor'|trans({}, t) }}</label>
+                    <label><input type="checkbox" id="schedFullCompTemplates"> {{ 'sched.full_comp_templates'|trans({}, t) }}</label>
+                    <label><input type="checkbox" id="schedFullCompFiles"> {{ 'sched.full_comp_files'|trans({}, t) }}
+                        <span style="color:var(--updater-tag-abandoned-fg);font-size:.7rem;">{{ 'sched.full_comp_files_warn'|trans({}, t) }}</span>
                     </label>
                     <div id="schedFilesWarning" style="display:none;background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);padding:.5rem .7rem;border-radius:3px;margin:.4rem 0;font-size:.75rem;line-height:1.4;">
-                        ⚠️ <strong>Warnung:</strong> <code>files/</code> in geplanten Backups ohne echten Cron ist riskant.
-                        Beim Web-Cron läuft das Backup während eines Seitenaufrufs (im Hintergrund) — dauert es länger als
-                        ein paar Minuten und der Hoster killt den PHP-Worker, ist das Backup unvollständig. Teste einmal
-                        mit „▶ Full jetzt ausführen", um die Größe abzuschätzen, bevor du es planst.
+                        {{ 'sched.files_warning'|trans({}, t)|raw }}
                     </div>
-                    <label><input type="checkbox" id="schedFullCompAssets"> assets/</label>
+                    <label><input type="checkbox" id="schedFullCompAssets"> {{ 'sched.full_comp_assets'|trans({}, t) }}</label>
                 </div>
 
                 <div id="schedFullState" style="margin-top:.8rem;"></div>
                 <div class="updater-sched-actions">
-                    <button class="updater-btn updater-btn-secondary" onclick="updaterRunSchedule('full')" style="font-size:.8rem;padding:.4rem .8rem;">▶ Full jetzt ausführen</button>
+                    <button class="updater-btn updater-btn-secondary" onclick="updaterRunSchedule('full')" style="font-size:.8rem;padding:.4rem .8rem;">{{ 'sched.run_full_now'|trans({}, t) }}</button>
                 </div>
             </div>
         </div>
 
         <!-- Storage path & notifications -->
         <div class="updater-sched-block" style="margin-top:1rem;">
-            <h4>Speicherort &amp; Benachrichtigungen</h4>
+            <h4>{{ 'sched.storage_notify_title'|trans({}, t)|raw }}</h4>
 
             <div class="updater-sched-row">
-                <label>Speicherpfad</label>
-                <input type="text" id="schedStoragePath" placeholder="(Standard: var/updater/backup)">
+                <label>{{ 'sched.storage_path'|trans({}, t) }}</label>
+                <input type="text" id="schedStoragePath" placeholder="{{ 'sched.storage_placeholder'|trans({}, t) }}">
             </div>
             <div style="color:var(--updater-text-muted);font-size:.75rem;margin:.2rem 0 .8rem 95px;">
-                Absoluter Pfad zur Ablage der Backups. Leer lassen für den Standard. Vermeide <code>vendor/</code>, <code>public/</code> und <code>files/</code>.
+                {{ 'sched.storage_hint'|trans({}, t)|raw }}
             </div>
 
             <div class="updater-sched-row">
-                <label>Empfänger</label>
-                <input type="email" id="schedEmail" placeholder="admin@example.com">
+                <label>{{ 'sched.recipient'|trans({}, t) }}</label>
+                <input type="email" id="schedEmail" placeholder="{{ 'sched.recipient_placeholder'|trans({}, t) }}">
             </div>
             <div class="updater-sched-row">
-                <label>Absender-E-Mail</label>
-                <input type="email" id="schedSenderEmail" placeholder="(optional — fällt auf Contao-Admin-E-Mail zurück)">
+                <label>{{ 'sched.sender_email'|trans({}, t) }}</label>
+                <input type="email" id="schedSenderEmail" placeholder="{{ 'sched.sender_email_placeholder'|trans({}, t) }}">
             </div>
             <div class="updater-sched-row">
-                <label>Absender-Name</label>
-                <input type="text" id="schedSenderName" placeholder="Guardian" maxlength="100">
+                <label>{{ 'sched.sender_name'|trans({}, t) }}</label>
+                <input type="text" id="schedSenderName" placeholder="{{ 'sched.sender_name_placeholder'|trans({}, t) }}" maxlength="100">
             </div>
             <div style="font-size:.75rem;color:var(--updater-text-muted);margin:.2rem 0 .8rem 95px;">
-                Leer lassen, um Contaos <strong>System → Einstellungen → Administrator-E-Mail-Adresse</strong> zu nutzen.
-                Nur überschreiben, wenn dein Hosting einen bestimmten Absender verlangt (z. B. eine im Plesk/cPanel
-                eingerichtete Mailbox wie <code>noreply@deine-domain.de</code>) und du die Contao-Admin-E-Mail nicht ändern kannst.
+                {{ 'sched.sender_hint'|trans({}, t)|raw }}
             </div>
             <div style="margin-left:95px;">
                 <label class="updater-pkg-checkbox" style="margin-right:1rem;">
-                    <input type="checkbox" id="schedNotifySuccess"> Bei erfolgreichem Backup benachrichtigen
+                    <input type="checkbox" id="schedNotifySuccess"> {{ 'sched.notify_success'|trans({}, t) }}
                 </label>
                 <label class="updater-pkg-checkbox">
-                    <input type="checkbox" id="schedNotifyFailure"> Bei fehlgeschlagenem Backup benachrichtigen
+                    <input type="checkbox" id="schedNotifyFailure"> {{ 'sched.notify_failure'|trans({}, t) }}
                 </label>
             </div>
             <div style="margin-top:.8rem;margin-left:95px;">
                 <button class="updater-btn updater-btn-secondary" onclick="updaterTestEmail()" style="font-size:.8rem;padding:.4rem .8rem;">
-                    ✉️ Test-E-Mail jetzt senden
+                    {{ 'sched.send_test'|trans({}, t) }}
                 </button>
                 <span style="font-size:.75rem;color:var(--updater-text-muted);margin-left:.5rem;">
-                    Speichert erst, dann wird eine Test-Mail mit den aktuellen Einstellungen versendet.
+                    {{ 'sched.send_test_hint'|trans({}, t) }}
                 </span>
                 <div id="updaterTestEmailResult" style="margin-top:.6rem;"></div>
             </div>
         </div>
 
         <div class="updater-sched-actions" style="margin-top:1rem;">
-            <button class="updater-btn" onclick="updaterSaveSchedule()">💾 Zeitplan speichern</button>
+            <button class="updater-btn" onclick="updaterSaveSchedule()">{{ 'sched.save'|trans({}, t) }}</button>
             <span id="schedSaveResult" style="font-size:.85rem;align-self:center;"></span>
         </div>
 
         <div class="updater-sched-cron-note">
-            <strong>⚙️ Wie geplante Backups ausgelöst werden</strong>
+            <strong>{{ 'cron.how_title'|trans({}, t) }}</strong>
             <p style="margin:.5rem 0;font-size:.85rem;">
-                Dieses Bundle klinkt sich in Contaos eingebautes Cron-System ein. Du musst dich nicht zwischen den
-                Methoden entscheiden — sie funktionieren zusammen und du kannst später ohne Änderungen am Bundle wechseln.
+                {{ 'cron.how_intro'|trans({}, t) }}
             </p>
 
             <details class="updater-cron-details">
-                <summary><strong>Option 1 — Web-Cron</strong> (Standard, keine Einrichtung) <span class="updater-cron-badge updater-cron-badge-active">aktuell aktiv</span></summary>
+                <summary><strong>{{ 'cron.option1_summary'|trans({}, t) }}</strong> {{ 'cron.option1_summary_note'|trans({}, t) }} <span class="updater-cron-badge updater-cron-badge-active">{{ 'cron.option1_badge'|trans({}, t) }}</span></summary>
                 <div class="updater-cron-detail-body">
-                    <p>Wenn du nichts tust, führt Contao Cronjobs am Ende jedes Frontend- oder Backend-Seitenaufrufs aus,
-                    nachdem die Antwort an den Nutzer gesendet wurde. Der Besucher wartet nicht.</p>
-                    <p><strong>Trade-offs:</strong></p>
-                    <ul>
-                        <li>✅ Kein Setup nötig.</li>
-                        <li>✅ Der Nutzer wartet nie — Backups laufen in <code>kernel.terminate</code>.</li>
-                        <li>⚠️ <strong>Zeitplan ist ungefähr:</strong> Ein für 03:00 geplantes Backup startet erst beim
-                            ersten Seitenaufruf nach 03:00. Ohne nächtlichen Traffic kann es auch erst um 08:30 laufen.</li>
-                        <li>⚠️ Lang laufende Backups (besonders mit <code>files/</code>) können PHP-FPM-Limits im Shared Hosting reißen.</li>
-                    </ul>
-                    <p style="background:var(--updater-bg-stat);padding:.6rem .8rem;border-radius:3px;font-size:.8rem;">
-                        🧪 <strong>Test-Tipp:</strong> Die Frequenzen „Alle 5 Minuten / 15 Minuten / Stündlich" sind
-                        intervallbasiert — sie feuern, sobald diese Zeit seit dem letzten Lauf vergangen ist, unabhängig
-                        von der Uhrzeit. Beim Web-Cron hängt das trotzdem daran, dass jemand die Seite aufruft und
-                        damit Contaos Cron-Framework auslöst. Ohne Traffic reicht ein Reload einer beliebigen Backend-Seite.
-                    </p>
+                    {{ 'cron.option1_body'|trans({}, t)|raw }}
                 </div>
             </details>
 
             <details class="updater-cron-details">
-                <summary><strong>Option 2 — Echter Cron</strong> (für Produktion empfohlen) <span class="updater-cron-badge">zusätzliches Setup</span></summary>
+                <summary><strong>{{ 'cron.option2_summary'|trans({}, t) }}</strong> {{ 'cron.option2_summary_note'|trans({}, t) }} <span class="updater-cron-badge">{{ 'cron.option2_badge'|trans({}, t) }}</span></summary>
                 <div class="updater-cron-detail-body">
-                    <p>Richte dein Hosting so ein, dass <code>contao:cron</code> zeitgesteuert aufgerufen wird.
-                    Backups laufen dann pünktlich, auch ohne Besucher, und teilen keine Ressourcen mit Web-Requests.</p>
-
-                    <p><strong>Der Befehl:</strong></p>
+                    {{ 'cron.option2_intro'|trans({}, t)|raw }}
                     <pre class="updater-cron-cmd">/usr/bin/php {{ project_dir }}/vendor/bin/contao-console contao:cron</pre>
-                    <p style="font-size:.75rem;color:var(--updater-text-muted);">
-                        Passe den PHP-Pfad an, falls nötig. Viele Hoster erkennen ihn automatisch — oft reicht auch <code>contao-console contao:cron</code>.
-                    </p>
+                    {{ 'cron.option2_command_hint'|trans({}, t)|raw }}
 
-                    <h5 class="updater-cron-h5">🔵 Plesk</h5>
-                    <ol>
-                        <li>Öffne <em>Domains → deine Domain → Geplante Aufgaben</em></li>
-                        <li>Klick auf <strong>Aufgabe hinzufügen</strong></li>
-                        <li>Aufgabentyp: <strong>Befehl ausführen</strong></li>
-                        <li>Befehl:
-                            <pre class="updater-cron-cmd">vendor/bin/contao-console contao:cron</pre>
-                        </li>
-                        <li>Ausführen: <strong>Cron-Stil</strong> →
-                            <code class="updater-cron-inline">*/5 * * * *</code>
-                            (alle 5 Minuten)
-                        </li>
-                        <li>Speichern. Plesk führt das Kommando standardmäßig vom Domain-Root aus.</li>
-                    </ol>
+                    <h5 class="updater-cron-h5">{{ 'cron.plesk_title'|trans({}, t) }}</h5>
+                    <ol>{{ 'cron.plesk_body'|trans({}, t)|raw }}</ol>
 
-                    <h5 class="updater-cron-h5">🟠 cPanel</h5>
-                    <ol>
-                        <li>Öffne <em>Advanced → Cron Jobs</em></li>
-                        <li>Common Settings: <strong>Alle 5 Minuten</strong> (<code>*/5 * * * *</code>)</li>
-                        <li>Befehl:
-                            <pre class="updater-cron-cmd">cd ~/yoursite.com && /usr/local/bin/php vendor/bin/contao-console contao:cron &gt;/dev/null 2&gt;&amp;1</pre>
-                        </li>
-                        <li>Ersetze <code>~/yoursite.com</code> durch deinen tatsächlichen Document-Root.</li>
-                        <li>Speichern.</li>
-                    </ol>
+                    <h5 class="updater-cron-h5">{{ 'cron.cpanel_title'|trans({}, t) }}</h5>
+                    <ol>{{ 'cron.cpanel_body'|trans({}, t)|raw }}</ol>
 
-                    <h5 class="updater-cron-h5">🟢 DirectAdmin</h5>
-                    <ol>
-                        <li>Öffne <em>Account Manager → Cron Jobs</em></li>
-                        <li>Setze die Zeitplan-Felder manuell:
-                            Minute=<code class="updater-cron-inline">*/5</code>,
-                            Stunde=<code class="updater-cron-inline">*</code>, Tag=<code class="updater-cron-inline">*</code>,
-                            Monat=<code class="updater-cron-inline">*</code>, Wochentag=<code class="updater-cron-inline">*</code>
-                        </li>
-                        <li>Befehl:
-                            <pre class="updater-cron-cmd">cd /home/USER/domains/yoursite.com/public_html && php vendor/bin/contao-console contao:cron</pre>
-                        </li>
-                    </ol>
+                    <h5 class="updater-cron-h5">{{ 'cron.directadmin_title'|trans({}, t) }}</h5>
+                    <ol>{{ 'cron.directadmin_body'|trans({}, t)|raw }}</ol>
 
-                    <h5 class="updater-cron-h5">⚫ SSH / direktes crontab</h5>
-                    <ol>
-                        <li>Per SSH einloggen</li>
-                        <li><code>crontab -e</code> ausführen</li>
-                        <li>Einfügen:
-                            <pre class="updater-cron-cmd">*/5 * * * * /usr/bin/php /full/path/to/site/vendor/bin/contao-console contao:cron &gt;/dev/null 2&gt;&amp;1</pre>
-                        </li>
-                        <li>Speichern und beenden (<code>:wq</code> in vim, <code>Strg+X Y</code> in nano).</li>
-                    </ol>
+                    <h5 class="updater-cron-h5">{{ 'cron.ssh_title'|trans({}, t) }}</h5>
+                    <ol>{{ 'cron.ssh_body'|trans({}, t)|raw }}</ol>
 
-                    <p style="font-size:.8rem;margin-top:.8rem;">
-                        <strong>Frequenz-Empfehlung:</strong> Alle 5 Minuten ist völlig ok. Der Scheduler rate-limitet
-                        unser Backup-Job intern auf „stündlich" — häufigere Cron-Läufe verringern nur den Drift.
-                    </p>
+                    {{ 'cron.option2_frequency_hint'|trans({}, t)|raw }}
                 </div>
             </details>
 
             <details class="updater-cron-details">
-                <summary><strong>Beides gleichzeitig?</strong> Ja — sie vertragen sich problemlos.</summary>
+                <summary><strong>{{ 'cron.both_summary'|trans({}, t) }}</strong> {{ 'cron.both_summary_note'|trans({}, t) }}</summary>
                 <div class="updater-cron-detail-body">
-                    <p>Wenn du einen echten Cron einrichtest <em>und</em> Web-Traffic hast, kommt das Bundle mit beidem klar:</p>
-                    <ul>
-                        <li>Contao merkt sich den letzten Ausführungszeitpunkt jedes Cronjobs. Wer zuerst feuert, gewinnt —
-                            der zweite sieht „schon in dieser Stunde gelaufen, überspringe".</li>
-                        <li>Ein zusätzlicher File-Lock (<code>flock()</code> auf <code>var/updater/backup.lock</code>) verhindert
-                            zusätzlich, dass zwei Backups parallel laufen.</li>
-                        <li>Du kannst den echten Cron später wieder entfernen — das Web-Fallback übernimmt automatisch.
-                            Oder umgekehrt: Cron nachträglich einrichten, es funktioniert einfach.</li>
-                    </ul>
-                    <p><strong>Empfehlung:</strong> Richte einen echten Cron ein, wenn dein Hosting das erlaubt. Das
-                    Web-Fallback wird dann zum Sicherheitsnetz — Backups laufen auch, wenn der Cron-Dienst mal ausfällt.</p>
+                    {{ 'cron.both_body'|trans({}, t)|raw }}
                 </div>
             </details>
 
             <p style="font-size:.75rem;color:var(--updater-text-muted);margin-top:.6rem;">
-                Referenz: <a href="https://docs.contao.org/5.x/manual/en/performance/cronjobs/" target="_blank" rel="noopener">Contao Cronjobs-Dokumentation</a>
+                {{ 'cron.reference'|trans({}, t)|raw }}
             </p>
         </div>
     </div>
@@ -990,23 +905,19 @@ html[data-color-scheme="dark"] {
 
     {# ── Update job runner ───────────────────────────────────────── #}
     <div class="updater-card">
-        <h3>🔄 Update ausführen</h3>
+        <h3>{{ 'update.run_title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
-            Updates laufen als Background-Jobs in einem separaten PHP-Prozess — der Browser muss nicht offen bleiben.
-            Fortschritt und Live-Log aktualisieren sich automatisch. Starte mit <strong>Dry-Run</strong>, um zu sehen,
-            was <em>passieren würde</em>, ohne etwas zu ändern.
+            {{ 'update.run_desc'|trans({}, t)|raw }}
         </p>
         <p style="color:var(--updater-text-muted);font-size:.8rem;margin:.4rem 0 1rem;">
-            💡 Wichtige Ereignisse aus Updates und geplanten Backups werden zusätzlich in Contaos
-            <strong>Systemlog</strong> geschrieben (System → Systemlog, Aktion <code>VTINNOVATIONS_GUARDIAN</code>).
-            So kannst du auch nachträglich nachvollziehen, was passiert ist, wenn das Live-Log hier weg ist.
+            {{ 'update.syslog_hint'|trans({}, t)|raw }}
         </p>
 
         <div id="updaterJobControls">
-            <button class="updater-btn" onclick="updaterStartJob('dry_run')">🧪 Dry-Run (sichere Simulation)</button>
-            <button class="updater-btn updater-btn-primary" onclick="updaterOpenUpdateModal()" style="background:var(--updater-danger);">▶ Echtes Update…</button>
+            <button class="updater-btn" onclick="updaterStartJob('dry_run')">{{ 'update.dry_run'|trans({}, t) }}</button>
+            <button class="updater-btn updater-btn-primary" onclick="updaterOpenUpdateModal()" style="background:var(--updater-danger);">{{ 'update.real_update'|trans({}, t) }}</button>
             <span style="color:var(--updater-text-muted);font-size:.8rem;margin-left:1rem;">
-                Vor jedem Update wird ein Pre-Update-Snapshot erstellt. Schlägt das Update fehl, ist ein Rollback mit einem Klick möglich.
+                {{ 'update.pre_snapshot_hint'|trans({}, t) }}
             </span>
         </div>
 
@@ -1014,63 +925,61 @@ html[data-color-scheme="dark"] {
         <div id="updaterUpdateModal" class="updater-modal" style="display:none;">
             <div class="updater-modal-backdrop" onclick="updaterCloseUpdateModal()"></div>
             <div class="updater-modal-dialog">
-                <h2>▶ Echtes Update starten</h2>
+                <h2>{{ 'update.modal_title'|trans({}, t) }}</h2>
                 <p style="color:var(--updater-text-muted);font-size:.85rem;">
-                    Dies verändert deine Live-Seite. Zuvor wird ein Pre-Update-Snapshot erstellt, damit du zurückrollen kannst.
+                    {{ 'update.modal_intro'|trans({}, t) }}
                 </p>
 
-                <h3 style="margin-top:1rem;">Update-Modus</h3>
+                <h3 style="margin-top:1rem;">{{ 'update.mode_title'|trans({}, t) }}</h3>
                 <label class="updater-radio-row">
                     <input type="radio" name="updateMode" value="full" checked>
                     <div>
-                        <div class="label-strong">Full — alles innerhalb der composer.json-Constraints aktualisieren</div>
-                        <div class="desc">Aktualisiert alle Pakete auf die höchsten von composer.json erlaubten Versionen. Häufigste Wahl.</div>
+                        <div class="label-strong">{{ 'update.mode_full_label'|trans({}, t) }}</div>
+                        <div class="desc">{{ 'update.mode_full_desc'|trans({}, t) }}</div>
                     </div>
                 </label>
                 <label class="updater-radio-row">
                     <input type="radio" name="updateMode" value="patch">
                     <div>
-                        <div class="label-strong">Konservativ — stabile Releases bevorzugen</div>
-                        <div class="desc">Wie Full, aber ohne Pre-Release-Versionen. Für strikt Patch-only in composer.json auf <code>~X.Y.Z</code> pinnen.</div>
+                        <div class="label-strong">{{ 'update.mode_patch_label'|trans({}, t) }}</div>
+                        <div class="desc">{{ 'update.mode_patch_desc'|trans({}, t)|raw }}</div>
                     </div>
                 </label>
                 <label class="updater-radio-row">
                     <input type="radio" name="updateMode" value="selective">
                     <div>
-                        <div class="label-strong">Selektiv — einzelne Pakete auswählen</div>
-                        <div class="desc">Wähle exakt aus, welche Pakete aktualisiert werden. Abhängigkeiten werden automatisch mitgezogen.</div>
+                        <div class="label-strong">{{ 'update.mode_selective_label'|trans({}, t) }}</div>
+                        <div class="desc">{{ 'update.mode_selective_desc'|trans({}, t) }}</div>
                     </div>
                 </label>
 
                 <div id="updaterSelectivePackages" style="display:none;margin-top:1rem;max-height:300px;overflow-y:auto;border:1px solid var(--updater-border);border-radius:4px;padding:.5rem;background:rgba(255,255,255,0.02);">
-                    <div style="text-align:center;color:var(--updater-text-muted);padding:1rem;">Pakete werden geladen…</div>
+                    <div style="text-align:center;color:var(--updater-text-muted);padding:1rem;">{{ 'update.packages_loading'|trans({}, t) }}</div>
                 </div>
 
-                <h3 style="margin-top:1rem;">Pre-Update-Snapshot</h3>
+                <h3 style="margin-top:1rem;">{{ 'update.snapshot_title'|trans({}, t) }}</h3>
                 <label class="updater-radio-row">
                     <input type="checkbox" id="updaterSnapshotVendor" checked>
                     <div>
-                        <div class="label-strong"><code>vendor/</code> in den Snapshot aufnehmen (empfohlen)</div>
-                        <div class="desc">Erlaubt einen vollständigen Rollback. Ohne dies umfasst der Rollback nur Composer-Dateien + DB, du müsstest <code>composer install</code> manuell nachziehen.</div>
+                        <div class="label-strong">{{ 'update.snapshot_vendor_label'|trans({}, t)|raw }}</div>
+                        <div class="desc">{{ 'update.snapshot_vendor_desc'|trans({}, t)|raw }}</div>
                     </div>
                 </label>
 
-                <h3 style="margin-top:1rem;">Recovery-E-Mail</h3>
+                <h3 style="margin-top:1rem;">{{ 'update.recovery_email_title'|trans({}, t) }}</h3>
                 <label class="updater-radio-row" style="border-color:#c89a3a;">
                     <input type="checkbox" id="updaterSendRecoveryEmail" checked>
                     <div>
-                        <div class="label-strong">📧 Recovery-URLs + Access-Token <strong>vor</strong> dem Update per E-Mail senden</div>
+                        <div class="label-strong">{{ 'update.recovery_email_label'|trans({}, t)|raw }}</div>
                         <div class="desc">
-                            Falls etwas schiefgeht, ist diese Mail deine Rettungsleine. Empfänger konfigurierst du unter
-                            <a href="#tab=settings" onclick="updaterSwitchTab('settings', true)" style="color:var(--updater-text-link);">Einstellungen → Recovery-E-Mail</a>.
-                            <strong>Lösche die E-Mail nach erfolgreichem Update</strong> — sie enthält deinen vollständigen Access-Token.
+                            {{ 'update.recovery_email_desc'|trans({}, t)|raw }}
                         </div>
                     </div>
                 </label>
 
                 <div class="updater-modal-actions">
-                    <button class="updater-btn updater-btn-secondary" onclick="updaterCloseUpdateModal()">Abbrechen</button>
-                    <button class="updater-btn" style="background:var(--updater-danger);" onclick="updaterConfirmStartUpdate()">▶ Update jetzt starten</button>
+                    <button class="updater-btn updater-btn-secondary" onclick="updaterCloseUpdateModal()">{{ 'update.cancel'|trans({}, t) }}</button>
+                    <button class="updater-btn" style="background:var(--updater-danger);" onclick="updaterConfirmStartUpdate()">{{ 'update.start_now'|trans({}, t) }}</button>
                 </div>
             </div>
         </div>
@@ -1080,10 +989,10 @@ html[data-color-scheme="dark"] {
 
         <details style="margin-top:1rem;">
             <summary style="cursor:pointer;font-size:.85rem;color:var(--updater-text-muted);">
-                ▸ Letzte Job-Historie
+                {{ 'update.job_history_summary'|trans({}, t) }}
             </summary>
             <div id="updaterJobArchive" class="updater-job-archive" style="margin-top:.8rem;">
-                <em>Lädt...</em>
+                <em>{{ 'update.job_history_loading'|trans({}, t) }}</em>
             </div>
         </details>
     </div>
@@ -1093,84 +1002,65 @@ html[data-color-scheme="dark"] {
     {# ── TAB: Settings ───────────────────────────────────────────── #}
     <div class="updater-tab-content" data-tab-panel="settings">
 
-    {# ── Pro License (v-t.one) ───────────────────────────────────── #}
+    {# ── Licence (managed in Contao → Settings) ──────────────────── #}
     <div class="updater-card">
-        <h3>🔑 Pro-Lizenz</h3>
+        <h3>{{ 'settings.license_title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.88rem;margin:.3rem 0 .9rem;line-height:1.5;">
-            Trage deinen Pro-Lizenzschlüssel ein, um den vollen Funktionsumfang freizuschalten:
-            <strong>Update-Jobs</strong>, <strong>Restore / Recovery</strong>,
-            das System für <strong>geplante Backups</strong> und das
-            <strong>Standalone-Recovery-Panel</strong>. Ohne gültige Lizenz ist nur
-            das Modul <strong>Manuelles Backup</strong> verfügbar.
+            {{ 'settings.license_desc'|trans({}, t)|raw }}
         </p>
         <p style="font-size:.85rem;margin:.3rem 0 .9rem;">
-            🔗 Lizenz beziehen unter
+            {{ 'settings.license_link'|trans({}, t) }}
             <a href="https://v-t.one" target="_blank" rel="noopener" style="color:var(--updater-text-link);font-weight:600;">v-t.one</a>
-            (Free &amp; Pro).
+            {{ 'settings.license_free_pro'|trans({}, t)|raw }}
         </p>
-
-        <div id="proLicenseState" style="margin-bottom:.8rem;font-size:.85rem;color:var(--updater-text-muted);">
-            Status wird geladen…
-        </div>
-
-        <div class="updater-recovery-row" style="margin-bottom:.6rem;">
-            <label style="min-width:120px;">Lizenzschlüssel</label>
-            <input type="text" id="proLicenseInput" placeholder="Lizenzschlüssel eingeben" style="flex:1;font-family:monospace;" maxlength="190">
-        </div>
-
-        <button class="updater-btn" onclick="updaterActivateLicense()" style="font-size:.85rem;padding:.45rem .9rem;">Lizenz prüfen &amp; aktivieren</button>
-        <button class="updater-btn updater-btn-secondary" onclick="updaterClearLicense()" style="font-size:.85rem;padding:.45rem .9rem;">Lizenz entfernen</button>
-        <span id="proLicenseStatus" style="margin-left:.7rem;font-size:.85rem;"></span>
+        <p style="margin:.3rem 0 0;">
+            <a class="updater-btn" href="{{ settings_url }}" style="font-size:.85rem;padding:.45rem .9rem;display:inline-block;text-decoration:none;">
+                {{ 'settings.license_goto'|trans({}, t) }}
+            </a>
+        </p>
     </div>
 
     {# ── Recovery e-mail settings ────────────────────────────────── #}
     <div class="updater-card">
-        <h3>📧 Recovery-E-Mail-Benachrichtigungen</h3>
+        <h3>{{ 'settings.recovery_email_title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.88rem;margin:.3rem 0 .9rem;line-height:1.5;">
-            Beim Start eines echten Updates kann das Panel Recovery-URLs und Access-Token
-            <strong>vor</strong> Beginn des Updates an eine konfigurierte Adresse mailen. Das ist essenziell —
-            zerlegt dir das Update die Seite, kannst du dich über die URLs in der Mail retten, auch ohne Zugriff auf dieses Backend.
+            {{ 'settings.recovery_email_desc'|trans({}, t)|raw }}
         </p>
 
         <div class="updater-recovery-row" style="margin-bottom:.6rem;">
-            <label style="min-width:120px;">Empfänger</label>
-            <input type="email" id="recoveryEmailInput" placeholder="admin@example.com" style="flex:1;">
+            <label style="min-width:120px;">{{ 'settings.recipient'|trans({}, t) }}</label>
+            <input type="email" id="recoveryEmailInput" placeholder="{{ 'settings.recipient_placeholder'|trans({}, t) }}" style="flex:1;">
         </div>
         <div class="updater-recovery-row" style="margin-bottom:.6rem;">
-            <label style="min-width:120px;">Absender (optional)</label>
-            <input type="email" id="recoverySenderInput" placeholder="leer lassen, um Empfängeradresse zu verwenden" style="flex:1;">
+            <label style="min-width:120px;">{{ 'settings.sender_optional'|trans({}, t) }}</label>
+            <input type="email" id="recoverySenderInput" placeholder="{{ 'settings.sender_placeholder'|trans({}, t) }}" style="flex:1;">
         </div>
         <div style="font-size:.78rem;color:var(--updater-text-muted);margin-left:120px;margin-bottom:.8rem;line-height:1.5;">
-            Lasse das Absender-Feld leer, außer dein Mailserver verlangt eine bestimmte From-Adresse. Bei Plesk/cPanel
-            verlangen die meisten Shared-Hoster, dass From eine echte Mailbox auf dem Server ist — schlägt die Test-Mail fehl,
-            setze Absender auf eine in Plesk angelegte, echte Mailbox-Adresse.
+            {{ 'settings.sender_hint'|trans({}, t)|raw }}
         </div>
 
-        <button class="updater-btn updater-btn-secondary" onclick="updaterSaveRecoveryEmail()" style="font-size:.85rem;padding:.45rem .9rem;">Speichern</button>
-        <button class="updater-btn" onclick="updaterSendTestRecoveryEmail()" style="font-size:.85rem;padding:.45rem .9rem;">Test-Mail senden</button>
+        <button class="updater-btn updater-btn-secondary" onclick="updaterSaveRecoveryEmail()" style="font-size:.85rem;padding:.45rem .9rem;">{{ 'settings.save'|trans({}, t) }}</button>
+        <button class="updater-btn" onclick="updaterSendTestRecoveryEmail()" style="font-size:.85rem;padding:.45rem .9rem;">{{ 'settings.send_test_mail'|trans({}, t) }}</button>
         <span id="recoveryEmailStatus" style="margin-left:.7rem;font-size:.85rem;"></span>
     </div>
 
     {# ── Server settings (PHP CLI binary) ─────────────────────────── #}
     <div class="updater-card">
-        <h3>⚙️ PHP-CLI-Einstellungen</h3>
+        <h3>{{ 'settings.php_title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;">
-            Updates und Restores laufen in einem Background-PHP-Prozess. Wir brauchen den <strong>absoluten Pfad zur PHP-CLI-Binary</strong>
-            (nicht die FPM/Web-Version). Bei Plesk sieht das typischerweise so aus:
-            <code>/opt/plesk/php/8.4/bin/php</code> — der gleiche Pfad, den auch der Contao Manager verwendet.
-            Leer lassen für Auto-Erkennung.
+            {{ 'settings.php_desc'|trans({}, t)|raw }}
         </p>
 
         <div class="updater-sched-row">
-            <label>PHP-Binary</label>
-            <input type="text" id="runtimePhpBinary" placeholder="(Auto-Erkennung, leer lassen, wenn unsicher)" style="font-family:monospace;">
+            <label>{{ 'settings.php_binary_label'|trans({}, t) }}</label>
+            <input type="text" id="runtimePhpBinary" placeholder="{{ 'settings.php_binary_placeholder'|trans({}, t) }}" style="font-family:monospace;">
         </div>
 
         <div id="runtimeCandidates" style="margin-left:95px;margin-top:.4rem;font-size:.8rem;"></div>
 
         <div class="updater-sched-actions" style="margin-top:.8rem;">
-            <button class="updater-btn updater-btn-secondary" onclick="updaterTestPhpBinary()" style="font-size:.85rem;padding:.4rem .9rem;">🔍 Testen</button>
-            <button class="updater-btn" onclick="updaterSaveRuntime()" style="font-size:.85rem;padding:.4rem .9rem;">💾 Speichern</button>
+            <button class="updater-btn updater-btn-secondary" onclick="updaterTestPhpBinary()" style="font-size:.85rem;padding:.4rem .9rem;">{{ 'settings.php_test'|trans({}, t) }}</button>
+            <button class="updater-btn" onclick="updaterSaveRuntime()" style="font-size:.85rem;padding:.4rem .9rem;">{{ 'settings.php_save'|trans({}, t) }}</button>
             <span id="runtimeResult" style="font-size:.85rem;align-self:center;margin-left:.5rem;"></span>
         </div>
     </div>
@@ -1182,97 +1072,84 @@ html[data-color-scheme="dark"] {
 
     {# ── Recovery Panel filename ─────────────────────────────────── #}
     <div class="updater-card">
-        <h3>🛟 Recovery-Panel-Dateiname</h3>
+        <h3>{{ 'recovery.filename_title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.88rem;margin:.4rem 0 .9rem;line-height:1.5;">
-            Das Standalone-Recovery-Panel wird beim Kernel-Boot nach <code>public/&lt;Dateiname&gt;</code> kopiert.
-            Ein eigener Dateiname erschwert das Auffinden durch Scanner (Security through Obscurity zusätzlich
-            zur Token-Authentifizierung). Muss auf <code>.php</code> enden, nur Buchstaben/Zahlen/<code>._-</code>,
-            max. 60 Zeichen.
+            {{ 'recovery.filename_desc'|trans({}, t)|raw }}
         </p>
 
         <div class="updater-sched-row">
-            <label>Dateiname</label>
-            <input type="text" id="runtimeRecoveryPanelFilename" placeholder="_updater-recovery.php" style="font-family:monospace;" maxlength="64">
+            <label>{{ 'recovery.filename_label'|trans({}, t) }}</label>
+            <input type="text" id="runtimeRecoveryPanelFilename" placeholder="{{ 'recovery.filename_placeholder'|trans({}, t) }}" style="font-family:monospace;" maxlength="64">
         </div>
         <div style="margin-left:95px;margin-top:.3rem;font-size:.78rem;color:var(--updater-text-muted);">
-            Beispiel: <code>secret-panel-xyz.php</code> → erreichbar unter <code>https://deine-site/secret-panel-xyz.php</code>.
-            Beim Umbenennen wird die vorherige Datei automatisch beim nächsten Boot entfernt.
+            {{ 'recovery.filename_hint'|trans({}, t)|raw }}
         </div>
 
         <div class="updater-sched-actions" style="margin-top:.8rem;">
-            <button class="updater-btn" onclick="updaterSaveRecoveryPanelFilename()" style="font-size:.85rem;padding:.4rem .9rem;">💾 Speichern</button>
+            <button class="updater-btn" onclick="updaterSaveRecoveryPanelFilename()" style="font-size:.85rem;padding:.4rem .9rem;">{{ 'recovery.filename_save'|trans({}, t) }}</button>
             <span id="runtimeRecoveryPanelResult" style="font-size:.85rem;align-self:center;margin-left:.5rem;"></span>
         </div>
     </div>
 
     {# ── Why restore lives here, not in the Contao backend ─────── #}
     <div class="updater-card" style="background:rgba(95,169,215,.08);border-left:4px solid #5fa9d7;">
-        <h3 style="margin-top:0;">↩️ Wie Restore in diesem Bundle funktioniert</h3>
+        <h3 style="margin-top:0;">{{ 'recovery.why_title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text);font-size:.9rem;margin:.3rem 0 .6rem;line-height:1.55;">
-            Restore ist eine <strong>Out-of-Band-Operation</strong> — bewusst wird sie <em>nicht</em> aus
-            diesem Contao-Backend heraus ausgelöst. Zwei Gründe:
+            {{ 'recovery.why_intro'|trans({}, t)|raw }}
         </p>
         <ul style="color:var(--updater-text);font-size:.88rem;margin:0 0 .8rem 1.2rem;line-height:1.55;">
-            <li>Wenn Contao läuft, brauchst du meistens keinen Restore. Wenn du einen brauchst, ist Contao wahrscheinlich kaputt — und du kommst ohnehin nicht mehr an diesen Tab.</li>
-            <li><code>vendor/</code> wiederherzustellen, während Symfony aus demselben Verzeichnis liest, ist gefährlich — das Backend würde mitten im Restore abstürzen.</li>
+            <li>{{ 'recovery.why_reason1'|trans({}, t) }}</li>
+            <li>{{ 'recovery.why_reason2'|trans({}, t)|raw }}</li>
         </ul>
         <p style="color:var(--updater-text);font-size:.9rem;margin:0 0 0;line-height:1.55;">
-            Nutze eines der beiden Recovery-Panels unten. Beide haben ihre eigene tokenbasierte Authentifizierung und
-            laufen unabhängig vom Contao-Backend.
+            {{ 'recovery.why_outro'|trans({}, t) }}
         </p>
     </div>
 
     {# ── Standalone Recovery Panel (file-based, framework-independent) ── #}
     <div class="updater-card" style="border-left: 4px solid #c89a3a;">
-        <h3>🆘 Standalone-Recovery-Panel (funktioniert auch bei defektem Contao)</h3>
+        <h3>{{ 'recovery.standalone_title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;line-height:1.5;">
-            Das ist ein separates <strong>Single-File-PHP-Skript</strong>, das automatisch unter
-            <code>public/_updater-recovery.php</code> installiert wird. Es läuft <strong>ohne Symfony, Composer oder Contao</strong> —
-            selbst wenn ein verpfuschtes Update das ganze Framework zerlegt, erreichst du es noch über den Webserver
-            und kannst aus einem Backup wiederherstellen.
+            {{ 'recovery.standalone_desc'|trans({}, t)|raw }}
         </p>
 
         <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;line-height:1.5;">
-            <strong>So nutzt du es im Notfall:</strong>
-            <br>1. Öffne <a id="updaterStandaloneUrl" href="#" target="_blank" rel="noopener" style="color:var(--updater-text-link);font-family:monospace;">/_updater-recovery.php</a> im Browser
-            <br>2. Der Browser zeigt einen Basic-Auth-Dialog → BELIEBIGEN Benutzernamen und deinen Access-Token (siehe Token-Bereich unten) als Passwort eintragen
-            <br>3. Backup auswählen und direkt wiederherstellen
+            {{ 'recovery.standalone_howto_intro'|trans({}, t)|raw }}
+            <br>1. {{ ('recovery.standalone_howto_step1'|trans({}, t))|replace({'%link%': '<a id="updaterStandaloneUrl" href="#" target="_blank" rel="noopener" style="color:var(--updater-text-link);font-family:monospace;">/_updater-recovery.php</a>'})|raw }}
+            <br>2. {{ 'recovery.standalone_howto_step2'|trans({}, t) }}
+            <br>3. {{ 'recovery.standalone_howto_step3'|trans({}, t) }}
         </p>
 
         <div style="background:rgba(248,195,64,.1);border-left:3px solid #c89a3a;padding:.6rem .9rem;font-size:.82rem;line-height:1.5;color:#ffe6a8;border-radius:3px;">
-            <strong>⚠️ Speichere URL + Token JETZT außerhalb von Contao</strong> (Passwortmanager, Notizzettel, egal wo).
-            Wenn Contao ausfällt, kannst du sie von dieser Seite nicht mehr kopieren.
+            {{ 'recovery.standalone_save_warning'|trans({}, t)|raw }}
         </div>
 
         <p style="font-size:.78rem;color:var(--updater-text-soft);margin-top:.8rem;">
-            Die Datei wird bei jedem Bundle-Update neu erzeugt — du musst nichts manuell pflegen.
-            Sie nutzt den unten angezeigten Access-Token.
+            {{ 'recovery.standalone_regenerated_hint'|trans({}, t) }}
         </p>
     </div>
 
     {# ── Token management for the standalone panel ───────────────── #}
     <div class="updater-card">
-        <h3>🔑 Access-Token</h3>
+        <h3>{{ 'recovery.token_title'|trans({}, t) }}</h3>
         <p style="color:var(--updater-text-muted);font-size:.9rem;margin:.4rem 0 1rem;line-height:1.5;">
-            Das Standalone-Recovery-Panel nutzt HTTP Basic Auth. Der Benutzername ist beliebig;
-            das Passwort ist der hier verwaltete Access-Token.
+            {{ 'recovery.token_desc'|trans({}, t) }}
         </p>
 
         <div id="updaterPanelTokenArea">
-            <p style="font-size:.85rem;color:var(--updater-text-muted);">Lädt…</p>
+            <p style="font-size:.85rem;color:var(--updater-text-muted);">{{ 'recovery.token_loading'|trans({}, t) }}</p>
         </div>
 
         <details style="margin-top:1.2rem;">
             <summary style="cursor:pointer;font-size:.85rem;color:var(--updater-text-muted);">
-                ▸ Token per <code>.env.local</code> fixieren
+                {{ 'recovery.token_env_fix_summary'|trans({}, t)|raw }}
             </summary>
             <div style="font-size:.85rem;padding:.8rem 0;line-height:1.6;color:var(--updater-text);">
-                <p>Für einen stabilen, versionierbaren Token diese Zeile in <code>.env.local</code> einfügen:</p>
+                {{ 'recovery.token_env_fix_intro'|trans({}, t)|raw }}
                 <pre class="updater-cron-cmd">VTINNOVATIONS_GUARDIAN_TOKEN=your-very-long-secret-token-here</pre>
-                <p>Das Bundle bevorzugt env vor der auto-generierten Datei. Nach dem Bearbeiten von <code>.env.local</code> den Symfony-Cache leeren.</p>
+                {{ 'recovery.token_env_fix_command_hint'|trans({}, t)|raw }}
                 <p style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);padding:.6rem .8rem;border-radius:3px;">
-                    ⚠️ <strong>Teste das Panel VOR einem Update.</strong> Wenn du es jetzt nicht erreichst,
-                    erreichst du es im Ernstfall auch nicht.
+                    {{ 'recovery.token_env_fix_warning'|trans({}, t)|raw }}
                 </p>
             </div>
         </details>
@@ -1283,27 +1160,26 @@ html[data-color-scheme="dark"] {
     {# ── Upgrade dialog (shown when a Free user clicks a locked tab) ─── #}
     <div class="updater-upgrade-modal" id="updaterUpgradeModal" onclick="if(event.target===this) updaterCloseUpgradeModal()">
         <div class="box">
-            <h3 id="updaterUpgradeTitle">🔒 Diese Funktion braucht das Pro-Paket</h3>
+            <h3 id="updaterUpgradeTitle">{{ 'upgrade.title_pro'|trans({}, t) }}</h3>
             <p id="updaterUpgradeBody">
-                Du bist gerade im <strong>Free-Paket</strong>. Damit steht dir das
-                <strong>Manuelle Backup</strong> zur Verfügung.
+                {{ 'upgrade.body_pro_intro'|trans({}, t)|raw }}
             </p>
             <p>
-                Mit der <strong>Pro-Lizenz</strong> schaltest du frei:
+                {{ 'upgrade.body_pro_unlocks'|trans({}, t)|raw }}
             </p>
             <ul style="margin:.4rem 0 .6rem 1.1rem;padding:0;color:var(--updater-text-muted);font-size:.88rem;line-height:1.6;">
-                <li>Update-Jobs (Composer full / patch / selektiv)</li>
-                <li>Restore / Recovery aus Snapshots</li>
-                <li>Geplante Backups (Mini + Full mit E-Mail-Benachrichtigung)</li>
-                <li>Standalone-Recovery-Panel für den Notfall</li>
+                <li>{{ 'upgrade.feature_updates'|trans({}, t) }}</li>
+                <li>{{ 'upgrade.feature_restore'|trans({}, t) }}</li>
+                <li>{{ 'upgrade.feature_schedule'|trans({}, t) }}</li>
+                <li>{{ 'upgrade.feature_panel'|trans({}, t) }}</li>
             </ul>
             <p style="font-size:.82rem;">
-                Lizenz beziehbar über <a href="https://www.v-t.one" target="_blank" rel="noopener" style="color:var(--updater-text-link);font-weight:600;">v-t.one</a>.
-                Aktivierung im Tab <strong>Einstellungen → Pro-Lizenz</strong>.
+                {{ 'upgrade.get_license'|trans({}, t) }} <a href="https://www.v-t.one" target="_blank" rel="noopener" style="color:var(--updater-text-link);font-weight:600;">v-t.one</a>.
+                {{ 'upgrade.activate_at'|trans({}, t)|raw }}
             </p>
             <div class="actions">
-                <button class="updater-btn updater-btn-secondary" onclick="updaterCloseUpgradeModal()">Schließen</button>
-                <button class="updater-btn" onclick="updaterCloseUpgradeModal(); updaterSwitchTab('settings', true);">→ Zu den Einstellungen</button>
+                <button class="updater-btn updater-btn-secondary" onclick="updaterCloseUpgradeModal()">{{ 'upgrade.close'|trans({}, t) }}</button>
+                <a class="updater-btn" href="{{ settings_url }}" style="display:inline-block;text-decoration:none;">{{ 'upgrade.goto_license'|trans({}, t) }}</a>
             </div>
         </div>
     </div>
@@ -1336,10 +1212,13 @@ var UPDATER_RUNTIME_GET_URL    = '{{ path('vtinnovations_guardian_runtime_get') 
 var UPDATER_RUNTIME_SAVE_URL   = '{{ path('vtinnovations_guardian_runtime_save') }}';
 var UPDATER_RUNTIME_TEST_URL   = '{{ path('vtinnovations_guardian_runtime_test') }}';
 var UPDATER_RUNTIME_TEST_EMAIL_URL = '{{ path('vtinnovations_guardian_runtime_test_recovery_email') }}';
-var UPDATER_LICENSE_STATUS_URL   = '{{ path('vtinnovations_guardian_license_status') }}';
-var UPDATER_LICENSE_ACTIVATE_URL = '{{ path('vtinnovations_guardian_license_activate') }}';
-var UPDATER_LICENSE_CLEAR_URL    = '{{ path('vtinnovations_guardian_license_clear') }}';
+var UPDATER_SETTINGS_URL         = '{{ settings_url }}';
 var UPDATER_BACKUPS_LIST_URL   = '{{ path('vtinnovations_guardian_backup_list') }}';
+
+// Same per-locale strings as the server-rendered HTML above (see
+// BackendController::translations()) — grouped identically so a lookup
+// path like GUARDIAN_I18N.backup.confirm mirrors 'backup.confirm' in Twig.
+var GUARDIAN_I18N = {{ i18n|json_encode|raw }};
 
 var updaterPackages = [];
 
@@ -1349,6 +1228,28 @@ function updaterEscape(str) {
     return div.innerHTML;
 }
 
+// Looks up 'section.key' in GUARDIAN_I18N and substitutes any %placeholder%
+// tokens with the given values. Falls back to the key itself if missing, so
+// a translation gap degrades to a visible-but-harmless label rather than a
+// JS error.
+function updaterT(path, params) {
+    var value = path.split('.').reduce(function (obj, part) {
+        return (obj && typeof obj === 'object') ? obj[part] : undefined;
+    }, GUARDIAN_I18N);
+
+    if (typeof value !== 'string') {
+        return path;
+    }
+
+    if (params) {
+        for (var key in params) {
+            value = value.split(key).join(params[key]);
+        }
+    }
+
+    return value;
+}
+
 // ── Pre-update analysis ─────────────────────────────────────────────
 
 function updaterRunAnalysis() {
@@ -1356,8 +1257,8 @@ function updaterRunAnalysis() {
     const result = document.getElementById('updaterAnalysisResult');
 
     btn.disabled    = true;
-    btn.textContent = '⏳ Analyse läuft...';
-    result.innerHTML = '<div style="color:var(--updater-text-soft);padding:.8rem;">Bitte warten...</div>';
+    btn.textContent = updaterT('dashboard.analysis_running');
+    result.innerHTML = '<div style="color:var(--updater-text-soft);padding:.8rem;">' + updaterEscape(updaterT('dashboard.analysis_wait')) + '</div>';
 
     fetch(UPDATER_ANALYSE_URL, {
         method: 'POST',
@@ -1369,8 +1270,8 @@ function updaterRunAnalysis() {
     .then(r => r.json())
     .then(data => {
         if (!data.success) {
-            result.innerHTML = '<div class="updater-result-summary error">❌ Fehler: '
-                + updaterEscape(data.error || 'Unbekannter Fehler') + '</div>';
+            result.innerHTML = '<div class="updater-result-summary error">❌ '
+                + updaterEscape(updaterT('msc.generic_error', {'%error%': data.error || updaterT('msc.error_generic')})) + '</div>';
             return;
         }
 
@@ -1381,8 +1282,7 @@ function updaterRunAnalysis() {
         let html = '<div class="updater-result-summary ' + cls + '">'
             + updaterEscape(summary.message) + '<br>'
             + '<span style="font-weight:normal;font-size:.85rem;">'
-            + '✅ ' + summary.ok + ' OK · ⚠️ ' + summary.warnings
-            + ' Warnungen · ❌ ' + summary.errors + ' Fehler'
+            + updaterT('dashboard.analysis_summary', {'%ok%': summary.ok, '%warnings%': summary.warnings, '%errors%': summary.errors})
             + '</span></div>';
 
         for (const key in r.checks) {
@@ -1405,7 +1305,7 @@ function updaterRunAnalysis() {
     })
     .finally(() => {
         btn.disabled    = false;
-        btn.textContent = '🔍 Analyse erneut ausführen';
+        btn.textContent = updaterT('dashboard.analysis_rerun');
     });
 }
 
@@ -1421,10 +1321,10 @@ function updaterLoadPackages(forceRefresh) {
     const activeBtn = forceRefresh ? refreshBtn : loadBtn;
     activeBtn.disabled    = true;
     const originalLabel   = activeBtn.textContent;
-    activeBtn.textContent = forceRefresh ? '⏳ Packagist wird abgefragt...' : '⏳ Lädt...';
+    activeBtn.textContent = forceRefresh ? updaterT('dashboard.packages_refreshing') : updaterT('dashboard.packages_loading_short');
 
     if (!forceRefresh) {
-        result.innerHTML = '<div style="color:var(--updater-text-soft);padding:.8rem;">Installierte Pakete werden geladen...</div>';
+        result.innerHTML = '<div style="color:var(--updater-text-soft);padding:.8rem;">' + updaterEscape(updaterT('dashboard.packages_loading')) + '</div>';
     }
 
     const url = UPDATER_PACKAGES_URL + (forceRefresh ? '?refresh=1' : '');
@@ -1440,7 +1340,7 @@ function updaterLoadPackages(forceRefresh) {
     .then(data => {
         if (!data.success) {
             result.innerHTML = '<div class="updater-result-summary error">❌ '
-                + updaterEscape(data.error || 'Unbekannter Fehler') + '</div>';
+                + updaterEscape(data.error || updaterT('msc.error_generic')) + '</div>';
             return;
         }
 
@@ -1459,7 +1359,7 @@ function updaterLoadPackages(forceRefresh) {
     })
     .finally(() => {
         activeBtn.disabled    = false;
-        activeBtn.textContent = forceRefresh ? '🔄 Verfügbare Updates aktualisieren' : '📦 Pakete neu laden';
+        activeBtn.textContent = forceRefresh ? updaterT('dashboard.packages_refresh_done') : updaterT('dashboard.packages_reload');
     });
 }
 
@@ -1479,24 +1379,21 @@ function updaterRenderPackages(stats) {
     let metaHtml = '';
     if (stats) {
         const cachedNote = stats.cached
-            ? ' <span style="color:var(--updater-text-soft);">(gecacht — für Refresh „Updates prüfen" klicken)</span>'
+            ? ' <span style="color:var(--updater-text-soft);">' + updaterEscape(updaterT('dashboard.packages_cached_note')) + '</span>'
             : '';
         const errorNote = stats.error
-            ? '<div class="updater-result-summary warning">⚠️ Update-Prüfung unvollständig: '
-                + updaterEscape(stats.error) + '</div>'
+            ? '<div class="updater-result-summary warning">' + updaterT('dashboard.packages_check_incomplete', {'%error%': updaterEscape(stats.error)}) + '</div>'
             : '';
         metaHtml = errorNote
             + '<div class="updater-pkg-meta">'
-            + 'Gesamt: <strong>' + stats.total + '</strong> Pakete · '
-            + 'Updates verfügbar: <strong>' + stats.updates + '</strong> · '
-            + 'Abandoned: <strong>' + stats.abandoned + '</strong>'
+            + updaterT('dashboard.packages_meta', {'%total%': stats.total, '%updates%': stats.updates, '%abandoned%': stats.abandoned})
             + cachedNote
             + '</div>';
     }
 
     if (pkgs.length === 0) {
         result.innerHTML = metaHtml
-            + '<div class="updater-empty">Keine Pakete passen zum aktuellen Filter.</div>';
+            + '<div class="updater-empty">' + updaterEscape(updaterT('dashboard.packages_no_match')) + '</div>';
         return;
     }
 
@@ -1505,10 +1402,10 @@ function updaterRenderPackages(stats) {
     result.innerHTML = metaHtml
         + '<table class="updater-pkg-table">'
         +   '<thead><tr>'
-        +     '<th>Paket</th>'
-        +     '<th style="width:120px;">Aktuell</th>'
-        +     '<th style="width:160px;">Verfügbar</th>'
-        +     '<th style="width:140px;">Status</th>'
+        +     '<th>' + updaterEscape(updaterT('dashboard.packages_th_package')) + '</th>'
+        +     '<th style="width:120px;">' + updaterEscape(updaterT('dashboard.packages_th_current')) + '</th>'
+        +     '<th style="width:160px;">' + updaterEscape(updaterT('dashboard.packages_th_available')) + '</th>'
+        +     '<th style="width:140px;">' + updaterEscape(updaterT('dashboard.packages_th_status')) + '</th>'
         +   '</tr></thead>'
         +   '<tbody>' + rows + '</tbody>'
         + '</table>';
@@ -1530,7 +1427,7 @@ function updaterApplyFilter() {
     const metaHtml = meta ? meta.outerHTML : '';
 
     if (pkgs.length === 0) {
-        result.innerHTML = metaHtml + '<div class="updater-empty">Keine Pakete entsprechen dem aktuellen Filter.</div>';
+        result.innerHTML = metaHtml + '<div class="updater-empty">' + updaterEscape(updaterT('dashboard.packages_no_match')) + '</div>';
         return;
     }
 
@@ -1539,10 +1436,10 @@ function updaterApplyFilter() {
     result.innerHTML = metaHtml
         + '<table class="updater-pkg-table">'
         +   '<thead><tr>'
-        +     '<th>Paket</th>'
-        +     '<th style="width:120px;">Aktuell</th>'
-        +     '<th style="width:160px;">Verfügbar</th>'
-        +     '<th style="width:140px;">Status</th>'
+        +     '<th>' + updaterEscape(updaterT('dashboard.packages_th_package')) + '</th>'
+        +     '<th style="width:120px;">' + updaterEscape(updaterT('dashboard.packages_th_current')) + '</th>'
+        +     '<th style="width:160px;">' + updaterEscape(updaterT('dashboard.packages_th_available')) + '</th>'
+        +     '<th style="width:140px;">' + updaterEscape(updaterT('dashboard.packages_th_status')) + '</th>'
         +   '</tr></thead>'
         +   '<tbody>' + rows + '</tbody>'
         + '</table>';
@@ -1553,9 +1450,9 @@ function updaterApplyFilter() {
 
 function updaterCreateBackup() {
     const wantsFiles = document.getElementById('updaterBkpFiles').checked;
-    let confirmMsg = 'Backup jetzt erstellen?\n\nEs läuft synchron — lasse diesen Tab offen, bis es fertig ist.';
+    let confirmMsg = updaterT('backup.confirm');
     if (wantsFiles) {
-        confirmMsg += '\n\n⚠️ files/ ist ausgewählt — das kann bei vielen Uploads mehrere Minuten dauern.';
+        confirmMsg += updaterT('backup.confirm_files_warning');
     }
     if (!confirm(confirmMsg)) {
         return;
@@ -1565,8 +1462,8 @@ function updaterCreateBackup() {
     const result = document.getElementById('updaterBackupResult');
 
     btn.disabled    = true;
-    btn.innerHTML   = '<span class="updater-spinner"></span>Backup wird erstellt...';
-    result.innerHTML = '<div style="color:var(--updater-text-soft);padding:.8rem;">Backup läuft. Bitte warten — das läuft synchron, die Seite lädt erst neu, wenn es fertig ist.</div>';
+    btn.innerHTML   = '<span class="updater-spinner"></span>' + updaterEscape(updaterT('backup.creating'));
+    result.innerHTML = '<div style="color:var(--updater-text-soft);padding:.8rem;">' + updaterEscape(updaterT('backup.running_wait')) + '</div>';
 
     const components = {
         vendor:    document.getElementById('updaterBkpVendor').checked,
@@ -1587,14 +1484,14 @@ function updaterCreateBackup() {
     .then(r => r.json())
     .then(data => {
         if (!data.success) {
-            result.innerHTML = '<div class="updater-result-summary error">❌ Backup fehlgeschlagen: '
-                + updaterEscape(data.error || 'Unbekannter Fehler') + '</div>';
+            result.innerHTML = '<div class="updater-result-summary error">❌ '
+                + updaterT('backup.failed', {'%error%': updaterEscape(data.error || updaterT('msc.error_generic'))}) + '</div>';
             return;
         }
 
         const m = data.manifest;
-        let html = '<div class="updater-result-summary ok">✅ Backup erstellt: <strong>'
-            + updaterEscape(data.name) + '</strong> · ' + updaterEscape(m.total_size) + '</div>';
+        let html = '<div class="updater-result-summary ok">✅ '
+            + updaterT('backup.created', {'%name%': updaterEscape(data.name), '%size%': updaterEscape(m.total_size)}) + '</div>';
 
         // Show component summary
         html += '<div style="margin-top:.5rem;font-size:.9rem;">';
@@ -1605,12 +1502,12 @@ function updaterCreateBackup() {
                 + '</code> — ' + updaterEscape(info.size) + '</div>';
         };
 
-        html += renderRow('Datenbank',         m.database);
-        html += renderRow('vendor/',           m.vendor);
-        html += renderRow('templates/',        m.templates);
-        html += renderRow('contao/templates/', m.contao_tpl);
-        html += renderRow('files/',            m.files);
-        html += renderRow('assets/',           m.assets);
+        html += renderRow(updaterEscape(updaterT('backup.row_database')),   m.database);
+        html += renderRow(updaterEscape(updaterT('backup.row_vendor')),     m.vendor);
+        html += renderRow(updaterEscape(updaterT('backup.row_templates')),  m.templates);
+        html += renderRow(updaterEscape(updaterT('backup.row_contao_tpl')), m.contao_tpl);
+        html += renderRow(updaterEscape(updaterT('backup.row_files')),      m.files);
+        html += renderRow(updaterEscape(updaterT('backup.row_assets')),     m.assets);
         html += '</div>';
 
         // Show log
@@ -1627,12 +1524,12 @@ function updaterCreateBackup() {
     })
     .finally(() => {
         btn.disabled = false;
-        btn.textContent = '💾 Weiteres Backup erstellen';
+        btn.textContent = updaterT('backup.create_more');
     });
 }
 
 function updaterDeleteBackup(name) {
-    if (!confirm('Backup „' + name + '" löschen?\nDas kann nicht rückgängig gemacht werden.')) {
+    if (!confirm(updaterT('backup.delete_confirm', {'%name%': name}))) {
         return;
     }
 
@@ -1648,7 +1545,7 @@ function updaterDeleteBackup(name) {
     .then(r => r.json())
     .then(data => {
         if (!data.success) {
-            alert('Löschen fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'));
+            alert(updaterT('backup.delete_failed', {'%error%': data.error || updaterT('msc.error_generic')}));
             return;
         }
         updaterReloadBackupList();
@@ -1668,7 +1565,7 @@ function updaterReloadBackupList() {
     .then(r => r.json())
     .then(data => {
         if (!data.success || !data.backups || data.backups.length === 0) {
-            list.innerHTML = '<div class="updater-empty">Noch keine Backups. Nutze „Backup jetzt erstellen" oder warte, bis vor dem nächsten Update automatisch eines angelegt wird.</div>';
+            list.innerHTML = '<div class="updater-empty">' + updaterEscape(updaterT('backup.empty')) + '</div>';
             return;
         }
 
@@ -1681,7 +1578,7 @@ function updaterReloadBackupList() {
                 + '<span style="color:var(--updater-text-soft);font-size:.85rem;">' + updaterEscape(b.created_at) + '</span>'
                 + '<span style="color:var(--updater-text-very-soft);font-size:.8rem;">' + updaterEscape(b.path) + '</span>'
                 + '<button class="updater-btn updater-btn-delete" onclick="updaterDeleteBackup(\''
-                +   updaterEscape(b.name).replace(/'/g, "\\'") + '\')">Löschen</button>'
+                +   updaterEscape(b.name).replace(/'/g, "\\'") + '\')">' + updaterEscape(updaterT('backup.delete')) + '</button>'
                 + '</div>';
         }
         list.innerHTML = html;
@@ -1727,31 +1624,29 @@ function updaterRenderScheduleState(type, info) {
         const elapsedSec = Math.max(0, Math.round((Date.now() - startedTs) / 1000));
         const mins = Math.floor(elapsedSec / 60);
         const secs = elapsedSec % 60;
+        const elapsed = (mins > 0 ? mins + 'm ' : '') + secs + 's';
         html += '<div class="updater-sched-status warning">'
               + '<span class="updater-spinner"></span>'
-              + '<strong>Läuft...</strong> gestartet '
-              + updaterFormatDate(info.started_at)
-              + ' · vergangen: ' + (mins > 0 ? mins + 'm ' : '') + secs + 's'
+              + updaterT('sched.running_since', {'%date%': updaterFormatDate(info.started_at), '%elapsed%': elapsed})
               + '</div>';
     } else if (info.last_run) {
         const cls = info.last_status === 'success' ? 'success'
                   : info.last_status === 'error'   ? 'error'
                   : 'skipped';
         html += '<div class="updater-sched-status ' + cls + '">'
-              + '<strong>Letzter Lauf:</strong> ' + updaterFormatDate(info.last_run)
-              + ' · ' + updaterEscape(info.last_status || '');
+              + updaterT('sched.last_run', {'%date%': updaterFormatDate(info.last_run), '%status%': updaterEscape(info.last_status || '')});
         if (info.last_message) {
             html += '<br><span style="font-weight:normal;font-size:.8rem;">' + updaterEscape(info.last_message) + '</span>';
         }
         html += '</div>';
     } else {
-        html += '<div class="updater-sched-status skipped"><em>Noch nie ausgeführt.</em></div>';
+        html += '<div class="updater-sched-status skipped"><em>' + updaterEscape(updaterT('sched.never_ran')) + '</em></div>';
     }
 
     if (info.enabled && info.next_run_human) {
         html += '<div style="font-size:.8rem;color:var(--updater-text-muted);margin-top:.4rem;">'
-              + '<strong>Nächster Lauf:</strong> ' + updaterEscape(info.next_run_human)
-              + ' <span style="color:var(--updater-text-very-soft);">(ungefähr — feuert beim ersten Seitenaufruf nach diesem Zeitpunkt)</span>'
+              + updaterT('sched.next_run', {'%date%': updaterEscape(info.next_run_human)})
+              + ' <span style="color:var(--updater-text-very-soft);">' + updaterEscape(updaterT('sched.next_run_approx')) + '</span>'
               + '</div>';
     }
     el.innerHTML = html;
@@ -1845,7 +1740,7 @@ function updaterCollectScheduleConfig() {
 function updaterSaveSchedule() {
     const cfg    = updaterCollectScheduleConfig();
     const result = document.getElementById('schedSaveResult');
-    result.textContent = 'Speichern...';
+    result.textContent = updaterT('sched.saving');
     result.style.color = 'var(--updater-text-muted)';
 
     fetch(UPDATER_SCHED_SAVE_URL, {
@@ -1860,12 +1755,12 @@ function updaterSaveSchedule() {
     .then(r => r.json().then(data => ({ ok: r.ok, data: data })))
     .then(({ ok, data }) => {
         if (!ok || !data.success) {
-            result.textContent = '❌ ' + (data.error || 'Speichern fehlgeschlagen');
+            result.textContent = '❌ ' + (data.error || updaterT('sched.save_failed'));
             result.style.color = 'var(--updater-result-err-fg)';
             return;
         }
 
-        let msg = '✅ Gespeichert';
+        let msg = updaterT('sched.saved');
         if (data.path_warnings && data.path_warnings.length > 0) {
             msg += ' — ⚠️ ' + data.path_warnings.join(' ');
         }
@@ -1884,10 +1779,10 @@ function updaterSaveSchedule() {
 }
 
 function updaterRunSchedule(type) {
-    if (!confirm('Ein ' + type + '-Backup jetzt ausführen?\n\nDies ignoriert den Zeitplan und stößt sofort ein Backup an.')) return;
+    if (!confirm(updaterT('sched.run_now_confirm', {'%type%': type}))) return;
 
     const stateEl = document.getElementById('sched' + (type === 'mini' ? 'Mini' : 'Full') + 'State');
-    stateEl.innerHTML = '<div class="updater-sched-status skipped">⏳ Läuft...</div>';
+    stateEl.innerHTML = '<div class="updater-sched-status skipped">' + updaterEscape(updaterT('sched.running_now')) + '</div>';
 
     fetch(UPDATER_SCHED_RUN_URL, {
         method: 'POST',
@@ -1923,9 +1818,11 @@ var UPDATER_VALID_TABS  = ['dashboard', 'update', 'backup', 'recovery', 'setting
 //   - Free        → adds Backup (manual)
 //   - Pro         → adds Update + Recovery + scheduled backups + panel token
 //
-// Server-seeded so updaterInitTabs() has the correct state on the very
-// first hash-driven switchTab; the async /license/status refresh only
-// picks up runtime changes.
+// Server-seeded once per page load. This drives visual gating only — every
+// licensed operation is enforced again server-side, so unlocking these
+// variables in a console changes what the page looks like and nothing else.
+// Licence changes take effect on the next page load, after being made in
+// Contao → Settings.
 var UPDATER_PRO      = {{ is_pro      ? 'true' : 'false' }};
 var UPDATER_LICENSED = {{ is_licensed ? 'true' : 'false' }};
 var UPDATER_PRO_TABS      = ['update', 'recovery'];
@@ -1967,27 +1864,27 @@ function updaterRenderPlan(pro, licensed) {
     let cls, label, msg;
     if (pro) {
         cls   = 'pro';
-        label = '⭐ Pro-Paket aktiv';
-        msg   = 'Voller Funktionsumfang freigeschaltet — Updates, Restore/Recovery, geplante Backups und das Standalone-Recovery-Panel.';
+        label = updaterT('dashboard.plan_badge_pro');
+        msg   = updaterT('dashboard.plan_tagline_pro');
     } else if (licensed) {
         cls   = 'free';
-        label = '🆓 Free-Paket aktiv';
-        msg   = 'Free-Paket: Manuelles Backup verfügbar. Für Updates, Restore/Recovery, geplante Backups und Standalone-Recovery-Panel braucht es eine Pro-Lizenz.';
+        label = updaterT('dashboard.plan_badge_free');
+        msg   = updaterT('dashboard.plan_tagline_free');
     } else {
         cls   = 'none';
-        label = '🚫 Keine Lizenz';
-        msg   = 'Ohne Lizenz sind alle Funktionen gesperrt. Trage einen Lizenzschlüssel unter Einstellungen → Pro-Lizenz ein. Free-Lizenzen schalten das Manuelle Backup frei, Pro-Lizenzen den vollen Funktionsumfang.';
+        label = updaterT('dashboard.plan_badge_none');
+        msg   = updaterT('dashboard.plan_tagline_none');
     }
     badge.className   = 'updater-plan-badge ' + cls;
     badge.textContent = label;
-    tagline.textContent = msg;
+    tagline.innerHTML = msg;
 
     const rows = [
-        ['Manuelles Backup',                licensed],
-        ['Update-Jobs (Composer)',          pro],
-        ['Restore / Recovery',              pro],
-        ['Geplante Backups (Mini + Full)',  pro],
-        ['Standalone-Recovery-Panel',       pro],
+        [updaterT('dashboard.feature_backup'),   licensed],
+        [updaterT('dashboard.feature_updates'),  pro],
+        [updaterT('dashboard.feature_restore'),  pro],
+        [updaterT('dashboard.feature_schedule'), pro],
+        [updaterT('dashboard.feature_panel'),    pro],
     ];
     list.innerHTML = rows.map(([lbl, on]) =>
         '<li class="' + (on ? 'on' : 'off') + '">' + (on ? '✓' : '🔒') + ' ' + updaterEscape(lbl) + '</li>'
@@ -2001,16 +1898,11 @@ function updaterOpenUpgradeModal(tier) {
     if (!m) return;
     if (title && body) {
         if (tier === 'none') {
-            title.textContent = '🔒 Für diese Funktion brauchst du mindestens eine Free-Lizenz';
-            body.innerHTML = 'Ohne Lizenz sind alle Funktionen außer Dashboard und Einstellungen gesperrt. '
-                           + 'Eine <strong>kostenlose Free-Lizenz</strong> schaltet das Manuelle Backup frei; '
-                           + 'die <strong>Pro-Lizenz</strong> zusätzlich Updates, Restore/Recovery, geplante '
-                           + 'Backups und das Standalone-Recovery-Panel.';
+            title.textContent = updaterT('upgrade.title_none');
+            body.innerHTML = updaterT('upgrade.body_none');
         } else {
-            title.textContent = '🔒 Diese Funktion braucht das Pro-Paket';
-            body.innerHTML = 'Du bist gerade im <strong>Free-Paket</strong>. Damit steht dir das '
-                           + '<strong>Manuelle Backup</strong> zur Verfügung. Für Updates, Restore/Recovery, '
-                           + 'geplante Backups und das Standalone-Recovery-Panel brauchst du die Pro-Lizenz.';
+            title.textContent = updaterT('upgrade.title_pro');
+            body.innerHTML = updaterT('upgrade.body_pro_from_free');
         }
     }
     m.classList.add('open');
@@ -2019,131 +1911,6 @@ function updaterOpenUpgradeModal(tier) {
 function updaterCloseUpgradeModal() {
     const m = document.getElementById('updaterUpgradeModal');
     if (m) m.classList.remove('open');
-}
-
-// ── Pro-License (v-t.one) ──────────────────────────────────────────
-
-function updaterRenderLicenseState(data) {
-    const state = document.getElementById('proLicenseState');
-    if (!state) return;
-
-    if (!data || !data.has_key) {
-        state.innerHTML = '<span style="color:var(--updater-text-muted);">Keine Lizenz eingetragen — nur Manuelles Backup verfügbar.</span>';
-        return;
-    }
-
-    const parts = [];
-    parts.push('<div><strong>Schlüssel:</strong> <code>' + updaterEscape(data.key_preview || '') + '</code></div>');
-    if (data.domain) {
-        parts.push('<div><strong>Domain:</strong> <code>' + updaterEscape(data.domain) + '</code></div>');
-    }
-    if (data.package) {
-        parts.push('<div><strong>Paket:</strong> <code>' + updaterEscape(data.package) + '</code></div>');
-    }
-    if (data.expires_at) {
-        const d = new Date(data.expires_at * 1000);
-        parts.push('<div><strong>Läuft ab:</strong> ' + d.toLocaleDateString('de-DE') + '</div>');
-    } else if (data.pro) {
-        parts.push('<div><strong>Läuft ab:</strong> unbefristet</div>');
-    }
-    if (data.verified_at) {
-        const d = new Date(data.verified_at * 1000);
-        parts.push('<div style="color:var(--updater-text-muted);font-size:.78rem;">Zuletzt geprüft: ' + d.toLocaleString('de-DE') + '</div>');
-    }
-
-    let badge;
-    if (data.pro) {
-        badge = '<span style="background:var(--updater-result-ok-bg);color:var(--updater-result-ok-fg);padding:.15rem .5rem;border-radius:3px;font-weight:600;">⭐ Pro aktiv</span>';
-    } else if (data.licensed) {
-        badge = '<span style="background:var(--updater-badge-idle-bg);color:var(--updater-badge-idle-fg);padding:.15rem .5rem;border-radius:3px;font-weight:600;">🆓 Free aktiv</span>';
-    } else {
-        badge = '<span style="background:var(--updater-result-err-bg);color:var(--updater-result-err-fg);padding:.15rem .5rem;border-radius:3px;font-weight:600;">✗ Nicht aktiv</span>';
-    }
-    state.innerHTML = '<div style="margin-bottom:.4rem;">' + badge + '</div>' + parts.join('');
-}
-
-function updaterLoadLicenseStatus() {
-    fetch(UPDATER_LICENSE_STATUS_URL, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.success) return;
-        UPDATER_PRO      = !!data.pro;
-        UPDATER_LICENSED = !!data.licensed;
-        updaterApplyLicenseGating();
-        updaterRenderLicenseState(data);
-        const input = document.getElementById('proLicenseInput');
-        if (input && data.key_preview) input.placeholder = data.key_preview;
-    })
-    .catch(()=>{});
-}
-
-function updaterActivateLicense() {
-    const input  = document.getElementById('proLicenseInput');
-    const status = document.getElementById('proLicenseStatus');
-    const key    = (input.value || '').trim();
-
-    if (key === '') {
-        status.style.color = 'var(--updater-result-err-fg)';
-        status.textContent = '❌ Bitte einen Lizenzschlüssel eingeben.';
-        return;
-    }
-
-    status.style.color = 'var(--updater-text-muted)';
-    status.textContent = 'Prüfe bei v-t.one…';
-
-    fetch(UPDATER_LICENSE_ACTIVATE_URL, {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify({ key: key }),
-    })
-    .then(r => r.json())
-    .then(data => {
-        UPDATER_PRO      = !!data.pro;
-        UPDATER_LICENSED = !!data.licensed;
-        updaterApplyLicenseGating();
-        updaterRenderLicenseState(data);
-        if (data.valid) {
-            input.value = '';
-            status.style.color = 'var(--updater-result-ok-fg)';
-            status.textContent = '✓ Lizenz gültig — voller Funktionsumfang freigeschaltet';
-        } else {
-            status.style.color = 'var(--updater-result-err-fg)';
-            status.textContent = '❌ ' + (data.message || 'Aktivierung fehlgeschlagen');
-        }
-    })
-    .catch(e => {
-        status.style.color = 'var(--updater-result-err-fg)';
-        status.textContent = '❌ ' + (e.message || 'Anfrage fehlgeschlagen');
-    });
-}
-
-function updaterClearLicense() {
-    if (!confirm('Lizenz wirklich entfernen? Alle Pro-Funktionen werden gesperrt.')) return;
-    const status = document.getElementById('proLicenseStatus');
-
-    fetch(UPDATER_LICENSE_CLEAR_URL, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    })
-    .then(r => r.json())
-    .then(data => {
-        UPDATER_PRO      = false;
-        UPDATER_LICENSED = false;
-        updaterApplyLicenseGating();
-        updaterRenderLicenseState({has_key: false, pro: false});
-        document.getElementById('proLicenseInput').value = '';
-        if (status) {
-            status.style.color = 'var(--updater-text-muted)';
-            status.textContent = 'Lizenz entfernt';
-        }
-    });
 }
 
 function updaterInitTabs() {
@@ -2229,12 +1996,12 @@ function updaterSaveRecoveryEmail() {
 
     if (recipient !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
         status.style.color = 'var(--updater-danger)';
-        status.textContent = '⚠️ Ungültiges Empfänger-E-Mail-Format';
+        status.textContent = updaterT('settings.recipient_invalid');
         return;
     }
     if (sender !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sender)) {
         status.style.color = 'var(--updater-danger)';
-        status.textContent = '⚠️ Ungültiges Absender-E-Mail-Format';
+        status.textContent = updaterT('settings.sender_invalid');
         return;
     }
 
@@ -2266,16 +2033,16 @@ function updaterSaveRecoveryEmail() {
     .then(data => {
         if (data.success) {
             status.style.color = 'var(--updater-success-fg)';
-            status.textContent = '✓ Gespeichert';
+            status.textContent = updaterT('settings.saved_short');
             setTimeout(() => status.textContent = '', 3000);
         } else {
             status.style.color = 'var(--updater-danger)';
-            status.textContent = '❌ ' + (data.error || 'Speichern fehlgeschlagen');
+            status.textContent = updaterT('settings.save_failed', {'%error%': data.error || updaterT('sched.save_failed')});
         }
     })
     .catch(e => {
         status.style.color = 'var(--updater-danger)';
-        status.textContent = '❌ ' + (e.message || 'Anfrage fehlgeschlagen');
+        status.textContent = updaterT('settings.request_failed', {'%error%': e.message || e});
     });
 }
 
@@ -2285,12 +2052,12 @@ function updaterSendTestRecoveryEmail() {
 
     if (recipient === '') {
         status.style.color = 'var(--updater-danger)';
-        status.textContent = '⚠️ Erst einen Empfänger eintragen und speichern';
+        status.textContent = updaterT('settings.no_recipient');
         return;
     }
 
     status.style.color = 'var(--updater-text-muted)';
-    status.textContent = '⏳ Wird gesendet…';
+    status.textContent = updaterT('settings.sending_test');
 
     fetch(UPDATER_RUNTIME_TEST_EMAIL_URL, {
         method: 'POST',
@@ -2305,18 +2072,18 @@ function updaterSendTestRecoveryEmail() {
     .then(({ ok, data }) => {
         if (ok && data.success) {
             status.style.color = 'var(--updater-success-fg)';
-            status.textContent = '✓ Test-Mail an ' + recipient + ' gesendet';
+            status.textContent = updaterT('settings.test_sent', {'%recipient%': recipient});
         } else {
             status.style.color = 'var(--updater-danger)';
-            const err = (data.result && data.result.error) || data.error || 'Unbekannter Fehler';
-            const hint = (data.result && data.result.hint) ? '\n\nHinweis: ' + data.result.hint : '';
-            status.textContent = '❌ Fehlgeschlagen';
-            alert('Test-Mail fehlgeschlagen:\n\n' + err + hint);
+            const err = (data.result && data.result.error) || data.error || updaterT('msc.error_generic');
+            const hint = (data.result && data.result.hint) ? updaterT('settings.test_failed_hint', {'%hint%': data.result.hint}) : '';
+            status.textContent = updaterT('settings.test_failed_short');
+            alert(updaterT('settings.test_failed_alert', {'%error%': err, '%hint%': hint}));
         }
     })
     .catch(e => {
         status.style.color = 'var(--updater-danger)';
-        status.textContent = '❌ ' + (e.message || 'Anfrage fehlgeschlagen');
+        status.textContent = updaterT('settings.request_failed', {'%error%': e.message || e});
     });
 }
 
@@ -2330,7 +2097,6 @@ function updaterBootPanel() {
     if (!document.getElementById('updaterTabs')) return; // not on our page
     window.__updaterBooted = true;
     updaterInitTabs();
-    updaterLoadLicenseStatus();
     updaterLoadSchedule();
     updaterLoadPanelConfig();
     updaterLoadJobArchive();
@@ -2364,11 +2130,14 @@ function updaterBootPanel() {
     filesBox.addEventListener('change', updateWarn);
     updateWarn();
 
-    // Auto-refresh schedule state every 10 seconds while a backup is in progress
+    // Auto-refresh schedule state every 10 seconds while a backup is in progress.
+    // The in-progress markup always includes the spinner element, so checking
+    // for that (rather than matching translated status text) works regardless
+    // of the active locale.
     setInterval(function() {
-        const m = document.getElementById('schedMiniState').textContent || '';
-        const f = document.getElementById('schedFullState').textContent || '';
-        if (m.includes('Running') || m.includes('Läuft') || f.includes('Running') || f.includes('Läuft')) {
+        const miniRunning = !!document.querySelector('#schedMiniState .updater-spinner');
+        const fullRunning = !!document.querySelector('#schedFullState .updater-spinner');
+        if (miniRunning || fullRunning) {
             updaterLoadSchedule();
         }
     }, 10000);
@@ -2401,12 +2170,7 @@ var updaterJobLogOffset = 0;
 var updaterJobPollTimer = null;
 
 function updaterStartRollback(failedJobId) {
-    const confirmed = confirm(
-        'Zum Pre-Update-Snapshot zurückrollen?\n\n'
-      + 'Composer-Dateien, Datenbank und (falls enthalten) das vendor/-Verzeichnis werden auf den Stand '
-      + 'vor dem fehlgeschlagenen Update zurückgesetzt.\n\n'
-      + 'Die Seite geht während des Rollbacks in den Wartungsmodus.'
-    );
+    const confirmed = confirm(updaterT('job.rollback_confirm'));
     if (!confirmed) return;
 
     fetch(UPDATER_JOB_ROLLBACK_URL, {
@@ -2421,14 +2185,14 @@ function updaterStartRollback(failedJobId) {
     .then(r => r.json().then(data => ({ ok: r.ok, data: data })))
     .then(({ ok, data }) => {
         if (ok && data.success) {
-            alert('Rollback gestartet. Verfolge den Live-Log unten.');
+            alert(updaterT('job.rollback_started'));
             updaterJobLogOffset = 0;
             updaterStartPolling();
         } else {
-            alert('Rollback fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'));
+            alert(updaterT('job.rollback_failed', {'%error%': data.error || updaterT('msc.error_generic')}));
         }
     })
-    .catch(e => alert('Rollback-Anfrage fehlgeschlagen: ' + (e.message || e)));
+    .catch(e => alert(updaterT('job.rollback_request_failed', {'%error%': e.message || e})));
 }
 
 // ── REAL UPDATE MODAL ────────────────────────────────────────────────────
@@ -2478,7 +2242,7 @@ function updaterOnUpdateModeChange() {
 
 function updaterLoadPackagesForSelection() {
     const box = document.getElementById('updaterSelectivePackages');
-    box.innerHTML = '<div style="text-align:center;color:var(--updater-text-muted);padding:1rem;">Pakete werden geladen…</div>';
+    box.innerHTML = '<div style="text-align:center;color:var(--updater-text-muted);padding:1rem;">' + updaterEscape(updaterT('update.packages_loading')) + '</div>';
 
     fetch(UPDATER_PACKAGES_URL, {
         method: 'POST',
@@ -2491,22 +2255,22 @@ function updaterLoadPackagesForSelection() {
     .then(r => r.json())
     .then(data => {
         if (!data.success) {
-            box.innerHTML = '<div style="color:var(--updater-danger);padding:.5rem;">Fehler: ' + updaterEscape(data.error || 'Laden fehlgeschlagen') + '</div>';
+            box.innerHTML = '<div style="color:var(--updater-danger);padding:.5rem;">' + updaterT('update.load_error', {'%error%': updaterEscape(data.error || updaterT('msc.error_generic'))}) + '</div>';
             return;
         }
 
         const withUpdates = (data.packages || []).filter(p => p.has_update);
         if (withUpdates.length === 0) {
             box.innerHTML = '<div style="color:var(--updater-text-muted);padding:1rem;text-align:center;">'
-                          + 'Alle Pakete sind aktuell — nichts zu aktualisieren.</div>';
+                          + updaterEscape(updaterT('update.packages_all_current')) + '</div>';
             return;
         }
 
         let html = '<div style="padding:.4rem;font-size:.8rem;color:var(--updater-text-muted);">'
-                 + 'Für ' + withUpdates.length + ' Paket(e) sind Updates verfügbar. Wähle aus, welche aktualisiert werden sollen:</div>'
+                 + updaterEscape(updaterT('update.packages_updates_available', {'%count%': withUpdates.length})) + '</div>'
                  + '<div style="padding:.3rem;display:flex;gap:.4rem;">'
-                 + '<button class="updater-btn updater-btn-secondary" onclick="updaterSelectAllPkgs(true)" style="font-size:.75rem;padding:.25rem .6rem;">Alle auswählen</button>'
-                 + '<button class="updater-btn updater-btn-secondary" onclick="updaterSelectAllPkgs(false)" style="font-size:.75rem;padding:.25rem .6rem;">Auswahl aufheben</button>'
+                 + '<button class="updater-btn updater-btn-secondary" onclick="updaterSelectAllPkgs(true)" style="font-size:.75rem;padding:.25rem .6rem;">' + updaterEscape(updaterT('update.select_all')) + '</button>'
+                 + '<button class="updater-btn updater-btn-secondary" onclick="updaterSelectAllPkgs(false)" style="font-size:.75rem;padding:.25rem .6rem;">' + updaterEscape(updaterT('update.deselect_all')) + '</button>'
                  + '</div>';
 
         for (const p of withUpdates) {
@@ -2522,7 +2286,7 @@ function updaterLoadPackagesForSelection() {
         box.innerHTML = html;
     })
     .catch(e => {
-        box.innerHTML = '<div style="color:var(--updater-danger);padding:.5rem;">Fehler: ' + updaterEscape(e.message || e) + '</div>';
+        box.innerHTML = '<div style="color:var(--updater-danger);padding:.5rem;">' + updaterT('update.load_error', {'%error%': updaterEscape(e.message || e)}) + '</div>';
     });
 }
 
@@ -2545,28 +2309,23 @@ function updaterConfirmStartUpdate() {
         const selected = Array.from(document.querySelectorAll('.updater-pkg-checkbox:checked'))
             .map(cb => cb.value);
         if (selected.length === 0) {
-            alert('Bitte mindestens ein Paket zum Aktualisieren auswählen.');
+            alert(updaterT('update.select_at_least_one'));
             return;
         }
         options.packages = selected;
     }
 
     const modeLabels = {
-        full:      'FULL (alle Pakete innerhalb der composer.json-Constraints)',
-        patch:     'KONSERVATIV (stabile Releases bevorzugen)',
-        selective: 'SELEKTIV (' + (options.packages ? options.packages.length : 0) + ' Paket(e))',
+        full:      updaterT('update.mode_label_full'),
+        patch:     updaterT('update.mode_label_patch'),
+        selective: updaterT('update.mode_label_selective', {'%count%': options.packages ? options.packages.length : 0}),
     };
 
     const snapshotNote = snapshotVendor
-        ? 'Pre-Snapshot enthält vendor/ — voller Rollback möglich.'
-        : 'Pre-Snapshot enthält nur Composer + DB — Rollback erfordert manuelles `composer install`.';
+        ? updaterT('update.snapshot_note_with_vendor')
+        : updaterT('update.snapshot_note_without_vendor');
 
-    const confirmed = confirm(
-        'ECHTES Update starten?\n\n'
-      + 'Modus: ' + modeLabels[mode] + '\n'
-      + snapshotNote + '\n\n'
-      + 'Dies verändert deine Live-Seite. Sie geht während des Updates in den Wartungsmodus.'
-    );
+    const confirmed = confirm(updaterT('update.real_confirm', {'%mode%': modeLabels[mode], '%snapshot_note%': snapshotNote}));
     if (!confirmed) return;
 
     updaterCloseUpdateModal();
@@ -2579,9 +2338,7 @@ function updaterStartJob(type, options) {
     // For dry-run keep the legacy confirm dialog; real-update has already
     // confirmed via the modal.
     if (isDryRun) {
-        const msg = 'DRY-RUN starten?\n\nDas simuliert ein Update — composer läuft mit --dry-run, contao:migrate ebenso. ' +
-                    'Ein ECHTES Backup wird trotzdem angelegt (Sicherheitsnetz). Sonst wird nichts verändert.';
-        if (!confirm(msg)) return;
+        if (!confirm(updaterT('update.dry_run_confirm'))) return;
     }
 
     fetch(UPDATER_JOB_START_URL, {
@@ -2606,10 +2363,9 @@ function updaterStartJob(type, options) {
         if (reason === 'worker_spawn_failed') {
             // Show a specific dialog rather than a generic "failed" alert
             alert(
-                '❌ Worker konnte nicht gestartet werden\n\n' +
+                updaterT('update.worker_failed_title') + '\n\n' +
                 (data.error || '') + '\n\n' +
-                'Öffne unten den Bereich „PHP-CLI-Einstellungen" und trage den korrekten Pfad zur PHP-CLI-Binary ein ' +
-                '(z. B. /opt/plesk/php/8.4/bin/php bei Plesk), dann erneut versuchen.'
+                updaterT('update.worker_failed_hint')
             );
             // Reload the active job state so the failed job shows in the UI
             updaterJobLogOffset = 0;
@@ -2621,31 +2377,29 @@ function updaterStartJob(type, options) {
             // The recovery email couldn't be sent. We refuse to start the
             // update — the user opted in to receive the email and we don't
             // want them thinking they're protected when they're not.
-            const hint = data.hint ? '\n\nHinweis: ' + data.hint : '';
+            const hint = data.hint ? updaterT('update.email_failed_hint', {'%hint%': data.hint}) : '';
             alert(
-                '❌ Recovery-E-Mail konnte nicht gesendet werden\n\n' +
+                updaterT('update.email_failed_title') + '\n\n' +
                 (data.error || '') + hint + '\n\n' +
-                'Das Update wurde NICHT gestartet. Optionen:\n' +
-                '  • Mail-Konfiguration korrigieren (Einstellungen → Recovery-E-Mail) und erneut versuchen, oder\n' +
-                '  • Häkchen „Recovery-URLs per E-Mail senden" im Update-Dialog entfernen und ohne E-Mail fortfahren'
+                updaterT('update.email_failed_body')
             );
             return;
         }
 
         if (reason === 'blocked') {
             alert(
-                'Ein anderer Job steht im Weg:\n\n' +
-                (data.error || 'unbekannt') + '\n\n' +
-                'Nutze am aktiven Job den Button „⛔ Abbruch erzwingen" oder „🗑 Stale-Job aufräumen", um die Queue freizugeben.'
+                updaterT('update.blocked_title') + '\n\n' +
+                (data.error || updaterT('msc.error_generic')) + '\n\n' +
+                updaterT('update.blocked_hint')
             );
             updaterJobLogOffset = 0;
             updaterStartPolling();
             return;
         }
 
-        alert('Job konnte nicht gestartet werden: ' + (data.error || 'unbekannter Fehler'));
+        alert(updaterT('update.job_start_failed', {'%error%': data.error || updaterT('msc.error_generic')}));
     })
-    .catch(e => alert('Fehler: ' + (e.message || e)));
+    .catch(e => alert(updaterT('msc.generic_error', {'%error%': e.message || e})));
 }
 
 function updaterStartPolling() {
@@ -2735,7 +2489,7 @@ function updaterRenderJob(job, isStale, staleReason) {
         + '<div class="updater-job-status">'
         + '<span class="updater-status-badge ' + statusBadgeClass + '">' + updaterEscape(job.status) + '</span>'
         + '<span style="color:var(--updater-text-muted);font-size:.85rem;">'
-        + 'Job <code>' + updaterEscape(job.id) + '</code> · ' + updaterEscape(job.type) + '</span>'
+        + updaterEscape(updaterT('job.job_label')) + ' <code>' + updaterEscape(job.id) + '</code> · ' + updaterEscape(job.type) + '</span>'
         + '</div>';
 
     // Step pipeline
@@ -2789,20 +2543,17 @@ function updaterRenderJob(job, isStale, staleReason) {
         html += '<div style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);'
               + 'padding:1rem 1.2rem;border-radius:4px;margin-top:.8rem;border:2px solid var(--updater-danger);">'
               + '<div style="font-weight:600;font-size:1rem;margin-bottom:.4rem;">'
-              + '⚠️ Update fehlgeschlagen — Rollback verfügbar'
+              + updaterEscape(updaterT('job.update_failed_rollback_title'))
               + '</div>'
               + '<div style="font-size:.85rem;margin-bottom:.7rem;line-height:1.4;">'
-              + 'Vor den Änderungen wurde ein Pre-Update-Snapshot erstellt ('
-              + '<code>' + updaterEscape(job.options.pre_snapshot_name) + '</code>'
-              + '). Klick unten, um ihn wiederherzustellen und die Seite auf den Stand vor dem fehlgeschlagenen Update zurückzusetzen.'
+              + updaterT('job.update_failed_rollback_body', {'%snapshot%': '<code>' + updaterEscape(job.options.pre_snapshot_name) + '</code>'})
               + '</div>'
               + '<button class="updater-btn" onclick="updaterStartRollback(\'' + updaterEscape(job.id) + '\')" '
               + 'style="background:var(--updater-danger);font-size:.95rem;padding:.6rem 1.4rem;">'
-              + '↩️ Automatischer Rollback auf Pre-Snapshot'
+              + updaterEscape(updaterT('job.auto_rollback_button'))
               + '</button>'
               + '<div style="margin-top:.5rem;font-size:.75rem;color:var(--updater-text-muted);">'
-              + 'Wenn dieser Button nicht funktioniert (z. B. weil das fehlgeschlagene Update Contao selbst zerlegt hat), '
-              + 'nutze das <strong>Standalone-Recovery-Panel</strong> aus dem Recovery-Tab — es funktioniert ohne Contao oder Symfony.'
+              + updaterT('job.auto_rollback_fallback_hint')
               + '</div>'
               + '</div>';
     }
@@ -2811,11 +2562,11 @@ function updaterRenderJob(job, isStale, staleReason) {
     if (isStale) {
         html += '<div style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);'
               + 'padding:.7rem 1rem;border-radius:4px;margin-top:.6rem;font-size:.85rem;">'
-              + '⚠️ <strong>Dieser Job wirkt stale.</strong> ' + updaterEscape(staleReason || '')
+              + updaterT('job.stale_warning', {'%reason%': updaterEscape(staleReason || '')})
               + '<div style="margin-top:.5rem;">'
               + '<button class="updater-btn" onclick="updaterClearStaleJob(false)" '
               + 'style="background:var(--updater-danger);font-size:.8rem;padding:.4rem .9rem;">'
-              + '🗑 Stale-Job aufräumen</button>'
+              + updaterEscape(updaterT('job.clear_stale_button')) + '</button>'
               + '</div>'
               + '</div>';
     } else if (job.status === 'queued' || job.status === 'running') {
@@ -2823,21 +2574,21 @@ function updaterRenderJob(job, isStale, staleReason) {
         html += '<div style="margin-top:.6rem;font-size:.8rem;">'
               + '<button class="updater-btn" onclick="updaterClearStaleJob(true)" '
               + 'style="background:var(--updater-danger);font-size:.75rem;padding:.3rem .7rem;">'
-              + '⛔ Abbruch erzwingen</button>'
+              + updaterEscape(updaterT('job.force_abort_button')) + '</button>'
               + '<span style="margin-left:.5rem;color:var(--updater-text-muted);">'
-              + '(nutzen, wenn du sicher weißt, dass der Job hängt und du nicht warten kannst)'
+              + updaterEscape(updaterT('job.force_abort_hint'))
               + '</span>'
               + '</div>';
     }
 
     // Live log
-    html += '<h4 style="margin:1rem 0 .5rem 0;font-size:.9rem;color:var(--updater-text);">Live-Log</h4>'
+    html += '<h4 style="margin:1rem 0 .5rem 0;font-size:.9rem;color:var(--updater-text);">' + updaterEscape(updaterT('job.live_log')) + '</h4>'
           + '<div class="updater-job-log" id="updaterJobLog"></div>';
 
     // Stop polling when finished
     if (job.status === 'succeeded' || job.status === 'failed' || job.status === 'cancelled') {
         html += '<div style="margin-top:.8rem;font-size:.85rem;color:var(--updater-text-muted);">'
-              + 'Job beendet. Seite neu laden zum Zurücksetzen oder direkt einen weiteren starten.'
+              + updaterEscape(updaterT('job.finished_hint'))
               + '</div>';
 
         // Stop polling but keep one final log read in flight
@@ -2917,9 +2668,8 @@ function updaterLoadRuntime() {
     .then(data => {
         if (!data.success) return;
 
-        // License state now lives behind its own /license/status endpoint
-        // (handled by updaterLoadLicenseStatus); runtime config no longer
-        // carries the license key.
+        // Licence state is rendered server-side in Contao → Settings and is
+        // not part of the runtime config payload.
 
         document.getElementById('runtimePhpBinary').value = data.config.php_binary || '';
         const rf = document.getElementById('runtimeRecoveryPanelFilename');
@@ -2930,10 +2680,10 @@ function updaterLoadRuntime() {
         const cands = data.candidates || {};
         const paths = Object.keys(cands);
         if (paths.length === 0) {
-            candsDiv.innerHTML = '<span style="color:var(--updater-text-muted);">Keine üblichen PHP-Pfade auf diesem Server gefunden.</span>';
+            candsDiv.innerHTML = '<span style="color:var(--updater-text-muted);">' + updaterEscape(updaterT('settings.php_no_candidates')) + '</span>';
             return;
         }
-        let html = '<span style="color:var(--updater-text-muted);">Vorschläge: </span>';
+        let html = '<span style="color:var(--updater-text-muted);">' + updaterEscape(updaterT('settings.php_suggestions')) + '</span>';
         for (const p of paths) {
             html += '<a href="#" onclick="document.getElementById(\'runtimePhpBinary\').value=\'' + updaterEscape(p) + '\';return false;" '
                   + 'style="color:var(--updater-text-link);text-decoration:none;margin-right:.8rem;display:inline-block;font-family:monospace;font-size:.75rem;">'
@@ -2946,7 +2696,7 @@ function updaterLoadRuntime() {
 function updaterTestPhpBinary() {
     const path = document.getElementById('runtimePhpBinary').value.trim();
     const result = document.getElementById('runtimeResult');
-    result.textContent = 'Test läuft...';
+    result.textContent = updaterT('settings.php_testing');
     result.style.color = 'var(--updater-text-muted)';
 
     fetch(UPDATER_RUNTIME_TEST_URL, {
@@ -2961,7 +2711,7 @@ function updaterTestPhpBinary() {
             result.textContent = '✅ ' + r.version;
             result.style.color = 'var(--updater-result-ok-fg)';
         } else {
-            result.textContent = '❌ ' + (r.error || 'Test fehlgeschlagen');
+            result.textContent = '❌ ' + (r.error || updaterT('settings.php_test_failed'));
             result.style.color = 'var(--updater-result-err-fg)';
         }
     });
@@ -2970,7 +2720,7 @@ function updaterTestPhpBinary() {
 function updaterSaveRuntime() {
     const path = document.getElementById('runtimePhpBinary').value.trim();
     const result = document.getElementById('runtimeResult');
-    result.textContent = 'Speichern...';
+    result.textContent = updaterT('settings.php_saving');
     result.style.color = 'var(--updater-text-muted)';
 
     fetch(UPDATER_RUNTIME_SAVE_URL, {
@@ -2981,10 +2731,10 @@ function updaterSaveRuntime() {
     .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
     .then(({ ok, data }) => {
         if (ok && data.success) {
-            result.textContent = '✅ Gespeichert';
+            result.textContent = updaterT('settings.php_saved');
             result.style.color = 'var(--updater-result-ok-fg)';
         } else {
-            result.textContent = '❌ ' + (data.error || 'Speichern fehlgeschlagen');
+            result.textContent = updaterT('settings.php_save_failed', {'%error%': data.error || updaterT('sched.save_failed')});
             result.style.color = 'var(--updater-result-err-fg)';
         }
     });
@@ -2996,12 +2746,12 @@ function updaterSaveRecoveryPanelFilename() {
     const raw    = (input.value || '').trim();
 
     if (raw !== '' && !/^[A-Za-z0-9._-]{1,60}\.php$/.test(raw)) {
-        result.textContent = '❌ Ungültiger Dateiname (nur A-Z, 0-9, ._- ; muss auf .php enden)';
+        result.textContent = updaterT('recovery.filename_invalid');
         result.style.color = 'var(--updater-result-err-fg)';
         return;
     }
 
-    result.textContent = 'Speichern...';
+    result.textContent = updaterT('recovery.filename_saving');
     result.style.color = 'var(--updater-text-muted)';
 
     fetch(UPDATER_RUNTIME_SAVE_URL, {
@@ -3015,15 +2765,15 @@ function updaterSaveRecoveryPanelFilename() {
             const stored = (data.config && data.config.recovery_panel_filename) || '_updater-recovery.php';
             input.value = stored;
             updaterSetStandaloneUrl(stored);
-            result.textContent = '✅ Gespeichert — Panel unter ' + stored + ' (Cache leeren, damit neuer Boot deployt)';
+            result.textContent = updaterT('recovery.filename_saved', {'%filename%': stored});
             result.style.color = 'var(--updater-result-ok-fg)';
         } else {
-            result.textContent = '❌ ' + (data.error || 'Speichern fehlgeschlagen');
+            result.textContent = updaterT('recovery.filename_save_failed', {'%error%': data.error || updaterT('sched.save_failed')});
             result.style.color = 'var(--updater-result-err-fg)';
         }
     })
     .catch(e => {
-        result.textContent = '❌ ' + (e.message || 'Anfrage fehlgeschlagen');
+        result.textContent = updaterT('recovery.filename_request_failed', {'%error%': e.message || e});
         result.style.color = 'var(--updater-result-err-fg)';
     });
 }
@@ -3031,10 +2781,8 @@ function updaterSaveRecoveryPanelFilename() {
 function updaterClearStaleJob(force) {
     const isForce = !!force;
     const msg = isForce
-        ? 'Diesen Job zwangsabbrechen?\n\nDer Job wurde noch nicht als stale erkannt, aber du brichst ihn trotzdem ab. '
-          + 'Nur nutzen, wenn du sicher weißt, dass der Worker wirklich hängt. Teilweise erledigte Arbeit wird NICHT zurückgenommen.'
-        : 'Stale-Job aufräumen?\n\nDas bricht den vorherigen Job ab (der offenbar gecrasht ist oder nie startete), damit du einen neuen starten kannst. '
-          + 'Es macht KEINE bereits erledigte Arbeit rückgängig — es gibt nur den Queue-Slot frei.';
+        ? updaterT('job.clear_stale_confirm_force')
+        : updaterT('job.clear_stale_confirm');
 
     if (!confirm(msg)) {
         return;
@@ -3055,10 +2803,10 @@ function updaterClearStaleJob(force) {
             updaterStopPolling();
             updaterLoadJobArchive();
         } else {
-            alert('Aufräumen fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'));
+            alert(updaterT('job.clear_stale_failed', {'%error%': data.error || updaterT('msc.error_generic')}));
         }
     })
-    .catch(e => alert('Fehlgeschlagen: ' + (e.message || e)));
+    .catch(e => alert(updaterT('job.clear_stale_request_failed', {'%error%': e.message || e})));
 }
 
 function updaterAppendLog(entries) {
@@ -3092,7 +2840,7 @@ function updaterLoadJobArchive() {
         if (!el) return;
 
         if (!data.success || !data.jobs || data.jobs.length === 0) {
-            el.innerHTML = '<em>Noch keine früheren Jobs.</em>';
+            el.innerHTML = '<em>' + updaterEscape(updaterT('update.no_previous_jobs')) + '</em>';
             return;
         }
 
@@ -3119,7 +2867,7 @@ function updaterLoadJobArchive() {
 
 function updaterTestEmail() {
     const result = document.getElementById('updaterTestEmailResult');
-    result.innerHTML = '<div style="color:var(--updater-text-muted);font-size:.8rem;">Konfiguration wird gespeichert und Mail versendet...</div>';
+    result.innerHTML = '<div style="color:var(--updater-text-muted);font-size:.8rem;">' + updaterEscape(updaterT('sched.test_email_sending')) + '</div>';
 
     // Save config first so the test uses the latest settings
     const cfg = updaterCollectScheduleConfig();
@@ -3131,7 +2879,7 @@ function updaterTestEmail() {
     .then(r => r.json())
     .then(saveData => {
         if (!saveData.success) {
-            result.innerHTML = '<div class="updater-result-summary error">❌ Speichern fehlgeschlagen: ' + updaterEscape(saveData.error || 'Unbekannt') + '</div>';
+            result.innerHTML = '<div class="updater-result-summary error">❌ ' + updaterT('sched.test_email_save_failed', {'%error%': updaterEscape(saveData.error || updaterT('msc.error_generic'))}) + '</div>';
             return;
         }
 
@@ -3147,19 +2895,19 @@ function updaterTestEmail() {
         const r = data.result || {};
         if (data.success) {
             result.innerHTML =
-                '<div class="updater-result-summary ok">✅ Test-Mail erfolgreich gesendet<br>'
-              + '<span style="font-size:.8rem;font-weight:normal;">Verwendeter Absender: <code>' + updaterEscape(r.sender_used || '?') + '</code></span><br>'
-              + '<span style="font-size:.8rem;font-weight:normal;">Postfach von <code>' + updaterEscape(r.recipient || '?') + '</code> prüfen</span>'
+                '<div class="updater-result-summary ok">' + updaterEscape(updaterT('sched.test_email_sent')) + '<br>'
+              + '<span style="font-size:.8rem;font-weight:normal;">' + updaterT('sched.test_email_sender_used', {'%sender%': '<code>' + updaterEscape(r.sender_used || '?') + '</code>'}) + '</span><br>'
+              + '<span style="font-size:.8rem;font-weight:normal;">' + updaterT('sched.test_email_check_inbox', {'%recipient%': '<code>' + updaterEscape(r.recipient || '?') + '</code>'}) + '</span>'
               + '</div>';
         } else {
-            let html = '<div class="updater-result-summary error">❌ Test-Mail fehlgeschlagen<br>'
-                     + '<span style="font-size:.8rem;font-weight:normal;font-family:monospace;">' + updaterEscape(r.error || 'Unbekannt') + '</span>';
+            let html = '<div class="updater-result-summary error">' + updaterEscape(updaterT('sched.test_email_failed')) + '<br>'
+                     + '<span style="font-size:.8rem;font-weight:normal;font-family:monospace;">' + updaterEscape(r.error || updaterT('msc.error_generic')) + '</span>';
             if (r.hint) {
                 html += '<div style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);padding:.5rem .7rem;border-radius:3px;margin-top:.5rem;font-size:.8rem;font-weight:normal;line-height:1.5;">'
                      + '💡 ' + updaterEscape(r.hint) + '</div>';
             }
             if (r.sender_attempted) {
-                html += '<div style="font-size:.75rem;font-weight:normal;margin-top:.4rem;">Versuchter Absender: <code>' + updaterEscape(r.sender_attempted) + '</code></div>';
+                html += '<div style="font-size:.75rem;font-weight:normal;margin-top:.4rem;">' + updaterT('sched.test_email_sender_attempted', {'%sender%': '<code>' + updaterEscape(r.sender_attempted) + '</code>'}) + '</div>';
             }
             html += '</div>';
             result.innerHTML = html;
@@ -3209,8 +2957,8 @@ function updaterLoadPanelConfig() {
 function renderPanelToken(data) {
     const tokenArea = document.getElementById('updaterPanelTokenArea');
     const sourceLabel = data.token_source === 'env'
-        ? '<span class="updater-token-source-badge updater-token-source-env">aus .env</span>'
-        : '<span class="updater-token-source-badge updater-token-source-file">auto-generiert</span>';
+        ? '<span class="updater-token-source-badge updater-token-source-env">' + updaterEscape(updaterT('recovery.token_source_env')) + '</span>'
+        : '<span class="updater-token-source-badge updater-token-source-file">' + updaterEscape(updaterT('recovery.token_source_generated')) + '</span>';
 
     // SECURITY: only the masked preview is returned by /panel/get. The full
     // token is only returned by /panel/rotate. To prevent users from being
@@ -3219,27 +2967,24 @@ function renderPanelToken(data) {
     const tokenPreview = data.token_preview || '****';
 
     let html = '<div style="margin-bottom:.4rem;font-size:.85rem;">'
-             + 'Quelle: ' + sourceLabel + '</div>'
+             + updaterT('recovery.token_source_label', {'%badge%': sourceLabel}) + '</div>'
              + '<div class="updater-token-display" id="panelTokenValue" data-masked="true">'
              +   updaterEscape(tokenPreview)
              + '</div>'
              + '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">';
 
     if (data.token_source !== 'env') {
-        html += '<button class="updater-btn updater-btn-secondary" onclick="updaterRotatePanelToken()" style="font-size:.8rem;padding:.4rem .8rem;background:var(--updater-danger);">🔄 Token rotieren, um eine neue Kopie zu erhalten</button>';
+        html += '<button class="updater-btn updater-btn-secondary" onclick="updaterRotatePanelToken()" style="font-size:.8rem;padding:.4rem .8rem;background:var(--updater-danger);">' + updaterEscape(updaterT('recovery.token_rotate_button')) + '</button>';
     }
     html += '</div>';
 
     if (data.token_source === 'env') {
         html += '<div style="font-size:.8rem;color:var(--updater-text-muted);margin-top:.5rem;">'
-              + 'Der Token ist in <code>.env.local</code> gesetzt. Zum Rotieren dort den Wert von <code>VTINNOVATIONS_GUARDIAN_TOKEN</code> '
-              + 'ändern und den Symfony-Cache leeren.'
+              + updaterT('recovery.token_env_note')
               + '</div>';
     } else {
         html += '<div style="font-size:.8rem;color:var(--updater-text-muted);margin-top:.5rem;">'
-              + 'Aus Sicherheitsgründen wird hier nur eine Preview des Tokens angezeigt. Um den vollständigen Token zu sehen '
-              + '(z. B. zum Bookmarken oder Speichern im Passwortmanager), klick auf <strong>Token rotieren</strong> — ein '
-              + 'frischer Token wird erzeugt und einmalig angezeigt. Der vorherige Token wird sofort ungültig.'
+              + updaterT('recovery.token_file_note')
               + '</div>';
     }
 
@@ -3250,21 +2995,19 @@ function updaterCopyPanelToken() {
     const el = document.getElementById('panelTokenValue');
     const token = el.textContent;
     if (el.dataset.masked === 'true') {
-        alert('Der hier angezeigte Token ist eine maskierte Preview. Klick auf „Token rotieren", um einen frischen Token zu erzeugen und einmalig anzuzeigen.');
+        alert(updaterT('recovery.token_masked_alert'));
         return;
     }
     navigator.clipboard.writeText(token).then(() => {
         const btn = event.target;
         const original = btn.textContent;
-        btn.textContent = '✅ Kopiert';
+        btn.textContent = updaterT('recovery.token_copied');
         setTimeout(() => { btn.textContent = original; }, 1500);
     });
 }
 
 function updaterRotatePanelToken() {
-    if (!confirm('Access-Token rotieren?\n\nDer alte Token wird sofort ungültig. '
-        + 'Der neue Token wird einmalig angezeigt — jetzt kopieren und speichern. '
-        + 'Nach dem Schließen des Dialogs oder Reload ist nur noch eine maskierte Preview sichtbar.')) {
+    if (!confirm(updaterT('recovery.token_rotate_confirm'))) {
         return;
     }
 
@@ -3275,7 +3018,7 @@ function updaterRotatePanelToken() {
     .then(r => r.json())
     .then(data => {
         if (!data.success) {
-            alert(data.error || 'Rotation fehlgeschlagen');
+            alert(data.error || updaterT('recovery.token_rotate_failed'));
             return;
         }
 
@@ -3288,9 +3031,8 @@ function updaterRotatePanelToken() {
         tokenArea.innerHTML =
             '<div style="background:var(--updater-result-warn-bg);color:var(--updater-result-warn-fg);'
           + 'padding:.8rem 1rem;border-radius:4px;margin-bottom:.6rem;font-size:.85rem;line-height:1.4;">'
-          + '⚠️ <strong>Neuer Token erzeugt — jetzt speichern</strong><br>'
-          + 'Er wird nur dieses eine Mal angezeigt. Nach Klick auf „Ich habe ihn gespeichert" '
-          + 'oder beim Verlassen der Seite ist nur noch eine maskierte Preview verfügbar.'
+          + '<strong>' + updaterEscape(updaterT('recovery.token_new_warning_title')) + '</strong><br>'
+          + updaterT('recovery.token_new_warning_body')
           + '</div>'
           + '<div class="updater-token-display" id="panelTokenValueFull" '
           + 'style="font-family:monospace;word-break:break-all;user-select:all;">'
@@ -3298,9 +3040,9 @@ function updaterRotatePanelToken() {
           + '</div>'
           + '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem;">'
           + '<button class="updater-btn updater-btn-secondary" onclick="updaterCopyFreshToken()" '
-          + 'style="font-size:.85rem;padding:.45rem .9rem;">📋 Token kopieren</button>'
+          + 'style="font-size:.85rem;padding:.45rem .9rem;">' + updaterEscape(updaterT('recovery.token_copy_button')) + '</button>'
           + '<button class="updater-btn" onclick="updaterLoadPanelConfig()" '
-          + 'style="font-size:.85rem;padding:.45rem .9rem;">Ich habe ihn gespeichert — ausblenden</button>'
+          + 'style="font-size:.85rem;padding:.45rem .9rem;">' + updaterEscape(updaterT('recovery.token_dismiss_button')) + '</button>'
           + '</div>';
     });
 }
@@ -3312,7 +3054,7 @@ function updaterCopyFreshToken() {
     navigator.clipboard.writeText(token).then(() => {
         const btn = event.target;
         const original = btn.textContent;
-        btn.textContent = '✅ Kopiert';
+        btn.textContent = updaterT('recovery.token_copied');
         setTimeout(() => { btn.textContent = original; }, 1500);
     });
 }
@@ -3325,7 +3067,7 @@ function updaterRenderPkgRow(p) {
     if (p.has_update && p.latest) {
         const semver = updaterDetectSemverChange(p.current, p.latest);
         const blockedNote = p.is_blocked
-            ? ' <span style="color:var(--updater-tag-blocked-fg);font-size:.75rem;font-weight:normal;" title="Auf Packagist existiert eine neuere Version, die aber wegen Constraints in anderen Paketen (z. B. Symfony-Versionsanforderungen) nicht installierbar ist. Contao zu updaten braucht meist ein Update von contao/manager-bundle, das alles nachzieht.">⚠ blockiert</span>'
+            ? ' <span style="color:var(--updater-tag-blocked-fg);font-size:.75rem;font-weight:normal;" title="' + updaterEscape(updaterT('dashboard.packages_blocked_title')) + '">' + updaterEscape(updaterT('dashboard.packages_tag_blocked_short')) + '</span>'
             : '';
         updateCell = '<span class="updater-pkg-arrow">→</span> '
             + '<span class="updater-pkg-newversion semver-' + semver + '">'
@@ -3335,14 +3077,14 @@ function updaterRenderPkgRow(p) {
 
     let tags = '';
     if (p.is_blocked) {
-        tags += '<span class="updater-pkg-tag updater-pkg-tag-blocked" title="Update existiert, ist aber durch Constraints anderer Pakete blockiert">blockiert</span> ';
+        tags += '<span class="updater-pkg-tag updater-pkg-tag-blocked" title="' + updaterEscape(updaterT('dashboard.packages_tag_blocked_title')) + '">' + updaterEscape(updaterT('dashboard.packages_tag_blocked')) + '</span> ';
     } else if (p.has_update) {
-        tags += '<span class="updater-pkg-tag updater-pkg-tag-update">Update</span> ';
+        tags += '<span class="updater-pkg-tag updater-pkg-tag-update">' + updaterEscape(updaterT('dashboard.packages_tag_update')) + '</span> ';
     } else if (p.status === 'up-to-date') {
-        tags += '<span class="updater-pkg-tag updater-pkg-tag-uptodate">aktuell</span> ';
+        tags += '<span class="updater-pkg-tag updater-pkg-tag-uptodate">' + updaterEscape(updaterT('dashboard.packages_tag_uptodate')) + '</span> ';
     }
     if (p.abandoned) {
-        tags += '<span class="updater-pkg-tag updater-pkg-tag-abandoned">abandoned</span> ';
+        tags += '<span class="updater-pkg-tag updater-pkg-tag-abandoned">' + updaterEscape(updaterT('dashboard.packages_tag_abandoned')) + '</span> ';
     }
 
     const desc = p.description

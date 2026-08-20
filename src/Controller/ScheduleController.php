@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-/**
- * @package   [updater]
- * @author    V&T Innovations Team
- * @license   GNU/LGPL
- * @copyright V&T Innovations 2026 - 2028
+/*
+ * Guardian
+ *
+ * Package: vtinnovations/guardian
+ * Copyright: V&T Innovations Team
+ * Licence: LGPL-3.0-or-later
+ * Website: https://www.v-t.one
  */
 
 namespace Vtinnovations\Guardian\Controller;
@@ -20,10 +22,14 @@ use Vtinnovations\Guardian\Schedule\ScheduledBackupRunner;
 use Vtinnovations\Guardian\Schedule\ScheduleEvaluator;
 use Vtinnovations\Guardian\Schedule\ScheduleState;
 use Vtinnovations\Guardian\Security\BackendAuthChecker;
-use Vtinnovations\Guardian\Security\LicenseGuard;
+use Vtinnovations\Guardian\Service\RegistrationPolicy;
+use Vtinnovations\Guardian\Service\RegistrationState;
 
 class ScheduleController
 {
+    use EntitlementResponses;
+    use GuardianTranslations;
+
     public function __construct(
         private readonly ScheduleConfig $config,
         private readonly ScheduleState $state,
@@ -31,7 +37,7 @@ class ScheduleController
         private readonly ScheduledBackupRunner $runner,
         private readonly BackupNotifier $notifier,
         private readonly BackendAuthChecker $backendAuth,
-        private readonly LicenseGuard $license,
+        private readonly RegistrationPolicy $policy,
     ) {
     }
 
@@ -44,8 +50,8 @@ class ScheduleController
     public function get(): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isPro()) {
-            return $this->license->deniedResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_SCHEDULE)) {
+            return $this->entitlementDenied(RegistrationState::CAP_SCHEDULE);
         }
 
         return new JsonResponse([
@@ -64,14 +70,14 @@ class ScheduleController
     public function save(Request $request): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isPro()) {
-            return $this->license->deniedResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_SCHEDULE)) {
+            return $this->entitlementDenied(RegistrationState::CAP_SCHEDULE);
         }
 
         $data = json_decode((string) $request->getContent(), true) ?? [];
 
         if (!\is_array($data)) {
-            return new JsonResponse(['success' => false, 'error' => 'Invalid payload'], 400);
+            return new JsonResponse(['success' => false, 'error' => $this->msg('invalid_payload')], 400);
         }
 
         // Validate the storage path BEFORE saving so the user gets feedback
@@ -80,7 +86,7 @@ class ScheduleController
         if (!$pathCheck['ok']) {
             return new JsonResponse([
                 'success'      => false,
-                'error'        => 'Storage path is invalid: ' . implode(' ', $pathCheck['errors']),
+                'error'        => $this->msg('storage_path_invalid', ['%errors%' => implode(' ', $pathCheck['errors'])]),
                 'path_warnings'=> $pathCheck['warnings'],
                 'path_errors'  => $pathCheck['errors'],
             ], 422);
@@ -106,8 +112,8 @@ class ScheduleController
     public function runNow(Request $request): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isPro()) {
-            return $this->license->deniedResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_SCHEDULE)) {
+            return $this->entitlementDenied(RegistrationState::CAP_SCHEDULE);
         }
 
         @set_time_limit(900);
@@ -116,7 +122,7 @@ class ScheduleController
         $type = (string) ($data['type'] ?? '');
 
         if (!\in_array($type, [ScheduledBackupRunner::TYPE_MINI, ScheduledBackupRunner::TYPE_FULL], true)) {
-            return new JsonResponse(['success' => false, 'error' => 'Invalid type'], 400);
+            return new JsonResponse(['success' => false, 'error' => $this->msg('invalid_backup_type')], 400);
         }
 
         try {
@@ -144,8 +150,8 @@ class ScheduleController
     public function testEmail(): JsonResponse
     {
         $this->backendAuth->assertAdmin();
-        if (!$this->license->isPro()) {
-            return $this->license->deniedResponse();
+        if (!$this->policy->allows(RegistrationState::CAP_SCHEDULE)) {
+            return $this->entitlementDenied(RegistrationState::CAP_SCHEDULE);
         }
 
         $result = $this->notifier->sendTestEmail();
